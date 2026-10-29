@@ -1,0 +1,743 @@
+Level 1 — 46 waves
+  clock   20  routine $6E556  call  x4   sprites 57,58                        
+  clock   68  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  276  routine $6E556  call  x4   sprites 57,58                        
+  clock  332  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  420  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  496  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  640  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  724  routine $6E556  call  x4   sprites 57,58                        
+  clock  864  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1008  routine $6D672  call  x?   sprites 168,169                      
+  clock 1024  routine $6E556  call  x4   sprites 57,58                        
+  clock 1088  routine $6E556  call  x4   sprites 57,58                        
+  clock 1136  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1280  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1312  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1344  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 1568  routine $6D672  call  x?   sprites 168,169                      
+  clock 1824  routine $6E556  call  x4   sprites 57,58                        
+  clock 1840  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1968  routine $6D672  call  x?   sprites 168,169                      
+  clock 2200  routine $6D82C  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 2368  routine $6E756  call  x8   sprites 154,155 / 150,151            
+  clock 2436  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2556  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2720  routine $6ED7C  call  x2   sprites 288,289                      
+  clock 2816  routine $6E556  call  x4   sprites 57,58                        
+  clock 2952  routine $6E556  call  x4   sprites 57,58                        
+  clock 3012  routine $6D672  call  x?   sprites 168,169                      
+  clock 3168  routine $6ED80  call  x3   sprites 288,289                      
+  clock 3200  routine $6D672  call  x?   sprites 168,169                      
+  clock 3216  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 3252  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 3288  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 3444  routine $6E55A  call  x6   sprites 57,58                        
+  clock 3648  routine $6D672  call  x?   sprites 168,169                      
+  clock 3824  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 3872  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 3920  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 4168  routine $6D672  call  x?   sprites 168,169                      
+  clock 4192  routine $6E55A  call  x6   sprites 57,58                        
+  clock 4448  routine $6F736  task  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4464  routine $6E55A  call  x6   sprites 57,58                        
+  clock 4512  routine $6E55A  call  x6   sprites 57,58                        
+  clock 4576  routine $6E400  call  x?   sprites 98,99                        
+  clock 4688  routine $6E55A  call  x6   sprites 57,58                        
+  clock 4704  routine $705D0  call  x?   sprites 240,242 / 98,99 / 354,355,356,357 end-of-level boss A
+
+Level 2 — 33 waves
+  clock  192  routine $6E55A  call  x6   sprites 55,56                        
+  clock  204  routine $6D6C0  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  416  routine $6E55A  call  x6   sprites 55,56                        
+  clock  464  routine $6E55A  call  x6   sprites 55,56                        
+  clock  652  routine $6D6C0  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  896  routine $6DA04  call  x3   sprites 87,88                        
+  clock  928  routine $6ECE6  call  x?   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock  976  routine $6E556  call  x4   sprites 55,56                        
+  clock 1280  routine $6E53E  call  x6   sprites 55,56                        
+  clock 1556  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1564  routine $6D2B8  call  x?   sprites 118,119 / 354,355,356,357    
+  clock 1684  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2036  routine $6E55A  call  x6   sprites 55,56                        
+  clock 2032  routine $6D6C0  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2048  routine $6E53E  call  x6   sprites 55,56                        
+  clock 2176  routine $6E53E  call  x6   sprites 55,56                        
+  clock 2312  routine $6D6C0  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2608  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2752  routine $6DF28  call  x?   sprites 130,132                      
+  clock 2760  routine $6D6C0  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2924  routine $6E55A  call  x6   sprites 55,56                        
+  clock 2928  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 3132  routine $6E756  call  x8   sprites 154,155 / 150,151            
+  clock 3492  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3508  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3784  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3872  routine $6E152  call  x?   sprites 290,291                      
+  clock 4124  routine $6DA22  call  x?   sprites 87,88                        
+  clock 4128  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 4144  routine $6E55A  call  x6   sprites 55,56                        
+  clock 4360  routine $6E55A  call  x6   sprites 55,56                        
+  clock 4448  routine $6F736  task  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4704  routine $6DB1E  call  x?   sprites 209,229 / 60,60,61,63,62 / 320,321,322,323,324 end-of-level boss B
+
+Level 3 — 52 waves
+  clock   96  routine $6E55A  call  x6   sprites 51,52                        
+  clock  176  routine $6E53E  call  x6   sprites 51,52                        
+  clock  184  routine $6D672  call  x?   sprites 168,169                      
+  clock  204  routine $6D672  call  x?   sprites 168,169                      
+  clock  344  routine $6E896  call  x4   sprites 297,298 / 294,295            
+  clock  576  routine $6E124  call  x4   sprites 290,291                      
+  clock  640  routine $6D672  call  x?   sprites 168,169                      
+  clock  768  routine $6D672  call  x?   sprites 168,169                      
+  clock  832  routine $6E54A  call  x12  sprites 51,52                        
+  clock 1052  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 1288  routine $6D672  call  x?   sprites 168,169                      
+  clock 1308  routine $6D672  call  x?   sprites 168,169                      
+  clock 1312  routine $6E53E  call  x6   sprites 51,52                        
+  clock 1324  routine $6DF76  call  x2   sprites 90,91 / 92,93 / 60,60,61,63,62 
+  clock 1328  routine $6D672  call  x?   sprites 168,169                      
+  clock 1648  routine $6E55A  call  x6   sprites 51,52                        
+  clock 1652  routine $6D672  call  x?   sprites 168,169                      
+  clock 1696  routine $6D672  call  x?   sprites 168,169                      
+  clock 1736  routine $6D672  call  x?   sprites 168,169                      
+  clock 1796  routine $6D672  call  x?   sprites 168,169                      
+  clock 1916  routine $6E896  call  x4   sprites 297,298 / 294,295            
+  clock 1980  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2012  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2044  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2076  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2304  routine $6DA66  call  x?   sprites 136,137,138 / 137,136 / 320,321,322,323,324 
+  clock 2432  routine $6E124  call  x4   sprites 290,291                      
+  clock 2624  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2652  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2652  routine $6D6AC  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2680  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2680  routine $6D6AC  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2708  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2708  routine $6D6AC  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2736  routine $6D78C  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2736  routine $6D6AC  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2916  routine $6D672  call  x?   sprites 168,169                      
+  clock 3080  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3084  routine $6D672  call  x?   sprites 168,169                      
+  clock 3088  routine $6E53E  call  x6   sprites 51,52                        
+  clock 3140  routine $6DF76  call  x2   sprites 90,91 / 92,93 / 60,60,61,63,62 
+  clock 3152  routine $6DA22  call  x?   sprites 87,88                        
+  clock 3212  routine $6D672  call  x?   sprites 168,169                      
+  clock 3416  routine $6D672  call  x?   sprites 168,169                      
+  clock 3616  routine $6D672  call  x?   sprites 168,169                      
+  clock 3624  routine $6E55A  call  x6   sprites 51,52                        
+  clock 3928  routine $6E972  call  x12  sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3928  routine $6D672  call  x?   sprites 168,169                      
+  clock 3960  routine $6D672  call  x?   sprites 168,169                      
+  clock 4096  routine $6DA66  call  x?   sprites 136,137,138 / 137,136 / 320,321,322,323,324 
+  clock 4448  routine $6F736  task  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4704  routine $705D0  call  x?   sprites 240,242 / 98,99 / 354,355,356,357 end-of-level boss A
+
+Level 4 — 46 waves
+  clock    4  routine $6E53E  call  x6   sprites 53,54                        
+  clock   64  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock  272  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock  320  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock  324  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock  325  routine $6E53E  call  x6   sprites 53,54                        
+  clock  368  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock  512  routine $6E53E  call  x6   sprites 53,54                        
+  clock  786  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock  946  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 1144  routine $6E53E  call  x6   sprites 53,54                        
+  clock 1268  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 1280  routine $6E53E  call  x6   sprites 53,54                        
+  clock 1296  routine $6DA04  call  x3   sprites 87,88                        
+  clock 1536  routine $6E53E  call  x6   sprites 53,54                        
+  clock 1788  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 1792  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 1824  routine $6D2B8  call  x?   sprites 118,119 / 354,355,356,357    
+  clock 1932  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 1932  routine $6E53E  call  x6   sprites 53,54                        
+  clock 2188  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 2188  routine $6E53E  call  x6   sprites 53,54                        
+  clock 2348  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 2348  routine $6E53E  call  x6   sprites 53,54                        
+  clock 2444  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 2444  routine $6E53E  call  x6   sprites 53,54                        
+  clock 2560  routine $6D9D6  call  x?   sprites 210,212                      
+  clock 2636  routine $6D81E  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 2716  routine $6D2B8  call  x?   sprites 118,119 / 354,355,356,357    
+  clock 2980  routine $6ECE6  call  x?   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 2988  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 3012  routine $6ECE6  call  x?   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 3044  routine $6ECE6  call  x?   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 3120  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3180  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 3188  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3224  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3308  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 3468  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 3492  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3724  routine $6E53E  call  x6   sprites 53,54                        
+  clock 3724  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 3724  routine $6EB88  call  x?   sprites 200,202                      
+  clock 3820  routine $6D816  call  x?   sprites 160 / 320,321,322,323,324    
+  clock 4448  routine $6F736  task  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4704  routine $6DB1E  call  x?   sprites 209,229 / 60,60,61,63,62 / 320,321,322,323,324 end-of-level boss B
+
+Level 5 — 37 waves
+  clock    8  routine $6E8A2  call  x15  sprites 297,298 / 294,295            
+  clock  256  routine $6E118  call  x14  sprites 290,291                      
+  clock  512  routine $6E88A  call  x9   sprites 297,298 / 294,295            
+  clock  720  routine $6D834  call  x?   sprites 160 / 320,321,322,323,324    
+  clock  756  routine $6D834  call  x?   sprites 160 / 320,321,322,323,324    
+  clock  792  routine $6D834  call  x?   sprites 160 / 320,321,322,323,324    
+  clock  964  routine $6E104  call  x10  sprites 290,291                      
+  clock 1200  routine $6EA40  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 1352  routine $6E886  call  x6   sprites 297,298 / 294,295            
+  clock 1432  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1480  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1512  routine $6E984  call  x6   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 1528  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1576  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1640  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1676  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1712  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1748  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1780  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1896  routine $6E120  call  x6   sprites 290,291                      
+  clock 1956  routine $6DA14  call  x?   sprites 87,88                        
+  clock 2176  routine $6FC9C  call  x?   sprites 156,157,158 / 114,115 / 116,117 
+  clock 2464  routine $6D8A0  call  x?   sprites 230,231,232,233 / 333,334,335,336,337,338 / 220,221,222,223 
+  clock 2576  routine $6E54A  call  x12  sprites 57,58                        
+  clock 2752  routine $6E53E  call  x6   sprites 57,58                        
+  clock 3008  routine $6E468  call  x6   sprites 85                           
+  clock 3248  routine $6E53E  call  x6   sprites 57,58                        
+  clock 3444  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3536  routine $6E972  call  x12  sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3724  routine $6DF28  call  x?   sprites 130,132                      
+  clock 3728  routine $6E468  call  x6   sprites 85                           
+  clock 4032  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4160  routine $6E56A  call  x12  sprites 57,58                        
+  clock 4288  routine $6E56A  call  x12  sprites 57,58                        
+  clock 4316  routine $6DDAA  call  x1   sprites 110,112 / 97                 
+  clock 4448  routine $6F736  task  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4704  routine $705D0  call  x?   sprites 240,242 / 98,99 / 354,355,356,357 end-of-level boss A
+
+Level 6 — 50 waves
+  clock  120  routine $6E468  call  x6   sprites 85                           
+  clock  184  routine $6E546  call  x10  sprites 55,56                        
+  clock  256  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock  568  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock  640  routine $6E97E  call  x8   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock  784  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock  848  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock  912  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock  916  routine $6E462  call  x9   sprites 85                           
+  clock  976  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock  980  routine $6D538  call  x?   sprites 94 / 173,174 / 175,176       
+  clock 1040  routine $6E478  call  x14  sprites 85                           
+  clock 1568  routine $6D672  call  x?   sprites 168,169                      
+  clock 1600  routine $6D672  call  x?   sprites 168,169                      
+  clock 1632  routine $6D672  call  x?   sprites 168,169                      
+  clock 1840  routine $6D672  call  x?   sprites 168,169                      
+  clock 1856  routine $6E104  call  x10  sprites 290,291                      
+  clock 2048  routine $6D672  call  x?   sprites 168,169                      
+  clock 2112  routine $6D672  call  x?   sprites 168,169                      
+  clock 2116  routine $6E47C  call  x4   sprites 85                           
+  clock 2120  routine $6DA08  call  x2   sprites 87,88                        
+  clock 2176  routine $6D672  call  x?   sprites 168,169                      
+  clock 2208  routine $6D672  call  x?   sprites 168,169                      
+  clock 2304  routine $6ECDA  call  x3   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 2352  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 2432  routine $6D672  call  x?   sprites 168,169                      
+  clock 2436  routine $6E456  call  x20  sprites 85                           
+  clock 2496  routine $6D672  call  x?   sprites 168,169                      
+  clock 2560  routine $6D672  call  x?   sprites 168,169                      
+  clock 2624  routine $6E456  call  x20  sprites 85                           
+  clock 2816  routine $6E546  call  x10  sprites 55,56                        
+  clock 2912  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 2976  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3104  routine $6E978  call  x9   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3296  routine $6E474  call  x26  sprites 85                           
+  clock 3360  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3568  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3648  routine $6ED88  call  x6   sprites 288,289                      
+  clock 3792  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3824  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3856  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3888  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3920  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3952  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3968  routine $6E75A  call  x9   sprites 154,155 / 150,151            
+  clock 4000  routine $6D538  call  x?   sprites 94 / 173,174 / 175,176       
+  clock 4096  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 4352  routine $6E02E  call  x6   sprites 106,107,108,109 / 354,355,356,357 
+  clock 4448  routine $6F736  call  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4704  routine $6DB1E  call  x?   sprites 209,229 / 60,60,61,63,62 / 320,321,322,323,324 end-of-level boss B
+
+Level 7 — 66 waves
+  clock    4  routine $6EABE  call  x6   sprites 83,84 / 34,35                
+  clock   32  routine $6ED84  call  x4   sprites 288,289                      
+  clock  256  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  304  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  340  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  352  routine $6E55E  call  x7   sprites 53,54                        
+  clock  512  routine $6E552  call  x2   sprites 53,54                        
+  clock  576  routine $6E566  call  x10  sprites 53,54                        
+  clock  592  routine $6EABE  call  x6   sprites 83,84 / 34,35                
+  clock  640  routine $6D672  call  x?   sprites 168,169                      
+  clock  688  routine $6E3F4  call  x3   sprites 98,99                        
+  clock  800  routine $6D672  call  x?   sprites 168,169                      
+  clock  848  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock  896  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock  944  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock  992  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 1056  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1104  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 1152  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 1184  routine $6E756  call  x8   sprites 154,155 / 150,151            
+  clock 1328  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1408  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1488  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1568  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1616  routine $6D672  call  x?   sprites 168,169                      
+  clock 1648  routine $6D672  call  x?   sprites 168,169                      
+  clock 1680  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1760  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1824  routine $6DE62  call  x6   sprites 104,105                      
+  clock 1876  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1944  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1944  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2012  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2080  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2148  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2216  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2284  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2304  routine $6E978  call  x9   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 2320  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2352  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2400  routine $6ED8C  call  x15  sprites 288,289                      
+  clock 2784  routine $6D672  call  x?   sprites 168,169                      
+  clock 2816  routine $6D672  call  x?   sprites 168,169                      
+  clock 2944  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2960  routine $6D21E  call  x6   sprites 140 / 141,142,143,140        
+  clock 2976  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 3408  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3456  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3504  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3552  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3600  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3648  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3652  routine $6D672  call  x?   sprites 168,169                      
+  clock 3684  routine $6D672  call  x?   sprites 168,169                      
+  clock 3840  routine $6D2AC  call  x4   sprites 118,119 / 354,355,356,357    
+  clock 3872  routine $6E984  call  x6   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3920  routine $6E56E  call  x16  sprites 53,54                        
+  clock 3968  routine $6E56A  call  x12  sprites 53,54                        
+  clock 4016  routine $6E56A  call  x12  sprites 53,54                        
+  clock 4312  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 4344  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 4400  routine $6EABE  call  x6   sprites 83,84 / 34,35                
+  clock 4440  routine $6E56A  call  x12  sprites 53,54                        
+  clock 4448  routine $6F736  call  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4576  routine $6ED84  call  x4   sprites 288,289                      
+  clock 4704  routine $705D0  call  x?   sprites 240,242 / 98,99 / 354,355,356,357 end-of-level boss A
+
+Level 8 — 62 waves
+  clock   36  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock   60  routine $6E542  call  x8   sprites 51,52                        
+  clock  140  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  164  routine $6E542  call  x8   sprites 51,52                        
+  clock  312  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  320  routine $6E108  call  x6   sprites 290,291                      
+  clock  400  routine $6E88A  call  x9   sprites 297,298 / 294,295            
+  clock  500  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  564  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock  832  routine $6E546  call  x10  sprites 51,52                        
+  clock  928  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1008  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1072  routine $6E546  call  x10  sprites 51,52                        
+  clock 1244  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1248  routine $6E400  call  x?   sprites 98,99                        
+  clock 1376  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1380  routine $6E98A  call  x4   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 1412  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1448  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1476  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1536  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1600  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1696  routine $6E98A  call  x4   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 1792  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1848  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1952  routine $6E88A  call  x9   sprites 297,298 / 294,295            
+  clock 2336  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2364  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2432  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2460  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2644  routine $6E542  call  x8   sprites 51,52                        
+  clock 2912  routine $6E886  call  x6   sprites 297,298 / 294,295            
+  clock 2984  routine $6E53E  call  x6   sprites 51,52                        
+  clock 3072  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3200  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3232  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3264  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3280  routine $6E98A  call  x4   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3544  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3608  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3664  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3824  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 3852  routine $6DA08  call  x2   sprites 87,88                        
+  clock 3856  routine $6E108  call  x6   sprites 290,291                      
+  clock 3880  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3912  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3944  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 3976  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4008  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 4040  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4072  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 4104  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4128  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4160  routine $6E53E  call  x6   sprites 51,52                        
+  clock 4176  routine $6ECDA  call  x3   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 4252  routine $6E03A  call  x?   sprites ?                            gun emplacement built into the ground layer (columns $5A/$5B)
+  clock 4308  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 4344  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 4448  routine $6F736  call  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4456  routine $6DF76  call  x2   sprites 90,91 / 92,93 / 60,60,61,63,62 
+  clock 4556  routine $6E74E  call  x4   sprites 154,155 / 150,151            
+  clock 4704  routine $6DB1E  call  x?   sprites 209,229 / 60,60,61,63,62 / 320,321,322,323,324 end-of-level boss B
+
+Level 9 — 69 waves
+  clock    4  routine $6E53E  call  x6   sprites 57,58                        
+  clock   48  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock   96  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  144  routine $6E53E  call  x6   sprites 57,58                        
+  clock  176  routine $6E3F0  call  x2   sprites 98,99                        
+  clock  288  routine $6E3F0  call  x2   sprites 98,99                        
+  clock  384  routine $6E3F0  call  x2   sprites 98,99                        
+  clock  444  routine $6E53E  call  x6   sprites 57,58                        
+  clock  596  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  696  routine $6D672  call  x?   sprites 168,169                      
+  clock  736  routine $6D672  call  x?   sprites 168,169                      
+  clock  788  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  844  routine $6D672  call  x?   sprites 168,169                      
+  clock  868  routine $6E54A  call  x12  sprites 57,58                        
+  clock  932  routine $6E3F0  call  x2   sprites 98,99                        
+  clock  976  routine $6E3F0  call  x2   sprites 98,99                        
+  clock 1024  routine $6E3F0  call  x2   sprites 98,99                        
+  clock 1028  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1080  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1132  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1232  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1244  routine $6D672  call  x?   sprites 168,169                      
+  clock 1256  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1280  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1292  routine $6E468  call  x6   sprites 85                           
+  clock 1304  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1328  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1352  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1376  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1400  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1424  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1448  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1452  routine $6D672  call  x?   sprites 168,169                      
+  clock 1472  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1496  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1544  routine $6D672  call  x?   sprites 168,169                      
+  clock 1568  routine $6D672  call  x?   sprites 168,169                      
+  clock 1600  routine $6E3F0  call  x2   sprites 98,99                        
+  clock 1608  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1632  routine $6E400  call  x?   sprites 98,99                        
+  clock 1636  routine $6E468  call  x6   sprites 85                           
+  clock 1648  routine $6D672  call  x?   sprites 168,169                      
+  clock 1676  routine $6D672  call  x?   sprites 168,169                      
+  clock 1716  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1792  routine $6E53E  call  x6   sprites 57,58                        
+  clock 1968  routine $6E53E  call  x6   sprites 57,58                        
+  clock 2048  routine $6D9D6  call  x?   sprites 210,212                      
+  clock 2080  routine $6ECD6  call  x2   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 2144  routine $6ED3E  call  x?   sprites 116,117 / 354,355,356,357    
+  clock 2348  routine $6E53E  call  x6   sprites 57,58                        
+  clock 2564  routine $6E108  call  x6   sprites 290,291                      
+  clock 2756  routine $6E752  call  x6   sprites 154,155 / 150,151            
+  clock 2804  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 2816  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 2880  routine $6D2A4  call  x2   sprites 118,119 / 354,355,356,357    
+  clock 2944  routine $6E542  call  x8   sprites 57,58                        
+  clock 3048  routine $6D2A8  call  x3   sprites 118,119 / 354,355,356,357    
+  clock 3112  routine $6EB7E  call  x?   sprites 200,202                      
+  clock 3116  routine $6DA08  call  x2   sprites 87,88                        
+  clock 1744  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1808  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1872  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 1936  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2000  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 2064  routine $6D416  call  x?   sprites 120 / 121 / 354,355,356,357  
+  clock 3976  routine $6E02A  call  x4   sprites 106,107,108,109 / 354,355,356,357 
+  clock 4168  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 4448  routine $6F736  call  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4704  routine $705D0  call  x?   sprites 240,242 / 98,99 / 354,355,356,357 end-of-level boss A
+
+Level 10 — 83 waves
+  clock    4  routine $6E566  call  x10  sprites 55,56                        
+  clock  168  routine $6E56A  call  x12  sprites 55,56                        
+  clock  400  routine $6E96C  call  x16  sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock  576  routine $6E972  call  x12  sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock  872  routine $6F5FE  call  x?   sprites 34,35                        
+  clock  876  routine $6F5FE  call  x?   sprites 34,35                        
+  clock  880  routine $6F5FE  call  x?   sprites 34,35                        
+  clock  884  routine $6F5FE  call  x?   sprites 34,35                        
+  clock  888  routine $6F5FE  call  x?   sprites 34,35                        
+  clock  944  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock  976  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1008  routine $6D672  call  x?   sprites 168,169                      
+  clock 1040  routine $6D672  call  x?   sprites 168,169                      
+  clock 1072  routine $6D672  call  x?   sprites 168,169                      
+  clock 1120  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1128  routine $6E11C  call  x10  sprites 290,291                      
+  clock 1152  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1232  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1264  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1296  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 1360  routine $6E11C  call  x10  sprites 290,291                      
+  clock 1468  routine $6E89E  call  x12  sprites 297,298 / 294,295            
+  clock 1644  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 1680  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 1840  routine $6E89E  call  x12  sprites 297,298 / 294,295            
+  clock 1904  routine $6D2A4  call  x2   sprites 118,119 / 354,355,356,357    
+  clock 1992  routine $6EABE  call  x6   sprites 83,84 / 34,35                
+  clock 2224  routine $6EABE  call  x6   sprites 83,84 / 34,35                
+  clock 2244  routine $6D2B8  call  x?   sprites 118,119 / 354,355,356,357    
+  clock 2636  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2684  routine $6D6C8  call  x?   sprites 162 / 164,162 / 320,321,322,323,324 
+  clock 2784  routine $6D672  call  x?   sprites 168,169                      
+  clock 2804  routine $6D672  call  x?   sprites 168,169                      
+  clock 2824  routine $6D672  call  x?   sprites 168,169                      
+  clock 2848  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 2976  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 2980  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 2984  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 2988  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 2992  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 2996  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 3000  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 3004  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 3048  routine $6D79A  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 3064  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 3112  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3116  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3156  routine $6D2B8  call  x?   sprites 118,119 / 354,355,356,357    
+  clock 3180  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 3212  routine $6EA48  call  x?   sprites 106,107,108,109 / 354,355,356,357 
+  clock 3220  routine $6DA66  call  x?   sprites 136,137,138 / 137,136 / 320,321,322,323,324 
+  clock 3236  routine $6E556  call  x4   sprites 55,56                        
+  clock 3240  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3244  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3248  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3252  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3256  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3260  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3264  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3268  routine $6F5FE  call  x?   sprites 34,35                        
+  clock 3272  routine $6D672  call  x?   sprites 168,169                      
+  clock 3276  routine $6E556  call  x4   sprites 55,56                        
+  clock 3280  routine $6D7A2  call  x?   sprites 170 / 171,170 / 320,321,322,323,324 
+  clock 3296  routine $6E53E  call  x6   sprites 55,56                        
+  clock 3372  routine $6E98A  call  x4   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3512  routine $6E97E  call  x8   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3636  routine $6E75E  call  x12  sprites 154,155 / 150,151            
+  clock 3848  routine $6E75E  call  x12  sprites 154,155 / 150,151            
+  clock 4096  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4144  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4192  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4240  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4288  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4336  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4384  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4432  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4448  routine $6F736  call  x?   sprites ?                            screen flash: palette colour $448 pulsed 3x (not an enemy)
+  clock 4480  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4528  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4576  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4624  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4672  routine $6FD0E  call  x1   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 4704  routine $6DB1E  call  x?   sprites 209,229 / 60,60,61,63,62 / 320,321,322,323,324 end-of-level boss B
+
+Level 11 — 60 waves
+  clock    4  routine $6E56A  call  x12  sprites 53,54                        
+  clock  100  routine $6E56A  call  x12  sprites 53,54                        
+  clock  232  routine $6D2A8  call  x3   sprites 118,119 / 354,355,356,357    
+  clock  288  routine $6FCFA  call  x4   sprites 116,117 / 354,355,356,357    
+  clock  296  routine $6DCF6  call  x?   sprites 60,60,61,63,62               
+  clock  300  routine $6DCF6  call  x?   sprites 60,60,61,63,62               
+  clock  320  routine $6DE5E  call  x4   sprites 104,105                      
+  clock  400  routine $6E990  call  x3   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock  586  routine $6DF1C  call  x3   sprites 130,132                      
+  clock  768  routine $6FD0A  call  x4   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock  772  routine $6E46E  call  x4   sprites 85                           
+  clock  888  routine $6DDA2  call  x3   sprites 110,112 / 97                 
+  clock  888  routine $6E53A  call  x4   sprites 53,54                        
+  clock  928  routine $6E10C  call  x4   sprites 290,291                      
+  clock  960  routine $6E886  call  x6   sprites 297,298 / 294,295            
+  clock 1024  routine $6ED84  call  x4   sprites 288,289                      
+  clock 1152  routine $6EAC2  call  x4   sprites 83,84 / 34,35                
+  clock 1200  routine $6E3F4  call  x3   sprites 98,99                        
+  clock 1280  routine $6E562  call  x8   sprites 53,54                        
+  clock 1440  routine $6D2AC  call  x4   sprites 118,119 / 354,355,356,357    
+  clock 1472  routine $6E02A  call  x4   sprites 106,107,108,109 / 354,355,356,357 
+  clock 1484  routine $6DE5A  call  x2   sprites 104,105                      
+  clock 1504  routine $6FCEE  call  x4   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 1536  routine $6D40A  call  x3   sprites 120 / 121 / 354,355,356,357  
+  clock 1696  routine $6DF18  call  x2   sprites 130,132                      
+  clock 1712  routine $6E990  call  x3   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 1808  routine $6FD06  call  x3   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 1824  routine $6E46E  call  x4   sprites 85                           
+  clock 2072  routine $6DDA6  call  x4   sprites 110,112 / 97                 
+  clock 2084  routine $6DE56  call  x?   sprites ?                            
+  clock 2112  routine $6E10C  call  x4   sprites 290,291                      
+  clock 2208  routine $6E88A  call  x9   sprites 297,298 / 294,295            
+  clock 2272  routine $6ED84  call  x4   sprites 288,289                      
+  clock 2296  routine $6E3F4  call  x3   sprites 98,99                        
+  clock 2336  routine $6EAC2  call  x4   sprites 83,84 / 34,35                
+  clock 2376  routine $6E542  call  x8   sprites 53,54                        
+  clock 2560  routine $6E542  call  x8   sprites 53,54                        
+  clock 2608  routine $6E53A  call  x4   sprites 53,54                        
+  clock 2664  routine $6E556  call  x4   sprites 53,54                        
+  clock 2688  routine $6D2AC  call  x4   sprites 118,119 / 354,355,356,357    
+  clock 2752  routine $6E02A  call  x4   sprites 106,107,108,109 / 354,355,356,357 
+  clock 2848  routine $6ECDA  call  x3   sprites 114,115 / 116,117 / 354,355,356,357 
+  clock 2880  routine $6ED3E  call  x?   sprites 116,117 / 354,355,356,357    
+  clock 2928  routine $6DE5A  call  x2   sprites 104,105                      
+  clock 2960  routine $6D40A  call  x3   sprites 120 / 121 / 354,355,356,357  
+  clock 3040  routine $6E98A  call  x4   sprites 100,101 / 102,103,102,103,102,103,102,103,102,103,100,101 / 354,355,356,357 
+  clock 3072  routine $6DF1C  call  x3   sprites 130,132                      
+  clock 3200  routine $6FD0A  call  x4   sprites 124,125,126,127 / 123 / 320,321,322,323,324 
+  clock 3232  routine $6E46E  call  x4   sprites 85                           
+  clock 3328  routine $6DDA6  call  x4   sprites 110,112 / 97                 
+  clock 3536  routine $6ED84  call  x4   sprites 288,289                      
+  clock 3552  routine $6E896  call  x4   sprites 297,298 / 294,295            
+  clock 3600  routine $6DE56  call  x?   sprites ?                            
+  clock 3664  routine $6E3F4  call  x3   sprites 98,99                        
+  clock 3808  routine $6EAC2  call  x4   sprites 83,84 / 34,35                
+  clock 4096  routine $708A2  call  x?   sprites ?                            
+  clock 4576  routine $6E3F4  call  x3   sprites 98,99                        
+  clock 4608  routine $6E3F4  call  x3   sprites 98,99                        
+  clock 4640  routine $6EAC2  call  x4   sprites 83,84 / 34,35                
+  clock 4792  routine $70512  call  x?   sprites 80 / 80,81,82 / 34,35        final boss (level 11)
+
+Legend (legend.png, left to right, top to bottom; most used first)
+    0  $6D672  used 60x  sprite 168  
+    1  $6D6C8  used 56x  sprite 162  
+    2  $6D7A2  used 37x  sprite 170  
+    3  $6FD0E  used 37x  sprite 124  
+    4  $6E53E  used 28x  sprite 55   
+    5  $6E03A  used 22x  sprite ?    gun emplacement built into the ground layer (columns $5A/$5B)
+    6  $6F5FE  used 22x  sprite 34   
+    7  $6D416  used 21x  sprite 120  
+    8  $6D78C  used 16x  sprite 170  
+    9  $6E55A  used 15x  sprite 57   
+   10  $6EA48  used 15x  sprite 106  
+   11  $6E556  used 12x  sprite 57   
+   12  $6F736  used 10x  sprite ?    screen flash: palette colour $448 pulsed 3x (not an enemy)
+   13  $6D816  used 10x  sprite 160  
+   14  $6E56A  used  8x  sprite 57   
+   15  $6D79A  used  8x  sprite 170  
+   16  $6D81E  used  7x  sprite 160  
+   17  $6E3F0  used  7x  sprite 98   
+   18  $6E3F4  used  6x  sprite 98   
+   19  $6E542  used  6x  sprite 51   
+   20  $705D0  used  5x  sprite 240  end-of-level boss A
+   21  $6D6C0  used  5x  sprite 162  
+   22  $6D2B8  used  5x  sprite 118  
+   23  $6DB1E  used  5x  sprite 209  end-of-level boss B
+   24  $6E468  used  5x  sprite 85   
+   25  $6EABE  used  5x  sprite 83   
+   26  $6ED84  used  5x  sprite 288  
+   27  $6E98A  used  5x  sprite 100  
+   28  $6ECE6  used  4x  sprite 114  
+   29  $6D6AC  used  4x  sprite 162  
+   30  $6E88A  used  4x  sprite 297  
+   31  $6E546  used  4x  sprite 55   
+   32  $6EAC2  used  4x  sprite 83   
+   33  $6E756  used  3x  sprite 154  
+   34  $6E400  used  3x  sprite 98   
+   35  $6E896  used  3x  sprite 297  
+   36  $6E54A  used  3x  sprite 51   
+   37  $6DF76  used  3x  sprite 90   
+   38  $6DA66  used  3x  sprite 136  
+   39  $6E972  used  3x  sprite 100  
+   40  $6D834  used  3x  sprite 160  
+   41  $6E886  used  3x  sprite 297  
+   42  $6DA08  used  3x  sprite 87   
+   43  $6ECDA  used  3x  sprite 114  
+   44  $6D2AC  used  3x  sprite 118  
+   45  $6E108  used  3x  sprite 290  
+   46  $6E02A  used  3x  sprite 106  
+   47  $6E46E  used  3x  sprite 85   
+   48  $6DA04  used  2x  sprite 87   
+   49  $6DF28  used  2x  sprite 130  
+   50  $6DA22  used  2x  sprite 87   
+   51  $6E124  used  2x  sprite 290  
+   52  $6D9D6  used  2x  sprite 210  
+   53  $6E104  used  2x  sprite 290  
+   54  $6E984  used  2x  sprite 100  
+   55  $6E97E  used  2x  sprite 100  
+   56  $6D538  used  2x  sprite 94   
+   57  $6E456  used  2x  sprite 85   
+   58  $6E978  used  2x  sprite 100  
+   59  $6E566  used  2x  sprite 53   
+   60  $6ED3E  used  2x  sprite 116  
+   61  $6D2A4  used  2x  sprite 118  
+   62  $6D2A8  used  2x  sprite 118  
+   63  $6E11C  used  2x  sprite 290  
+   64  $6E89E  used  2x  sprite 297  
+   65  $6E75E  used  2x  sprite 154  
+   66  $6DCF6  used  2x  sprite 60   
+   67  $6E990  used  2x  sprite 100  
+   68  $6DF1C  used  2x  sprite 130  
+   69  $6FD0A  used  2x  sprite 124  
+   70  $6E53A  used  2x  sprite 53   
+   71  $6E10C  used  2x  sprite 290  
+   72  $6DE5A  used  2x  sprite 104  
+   73  $6D40A  used  2x  sprite 120  
+   74  $6DDA6  used  2x  sprite 110  
+   75  $6DE56  used  2x  sprite ?    
+   76  $6D82C  used  1x  sprite 160  
+   77  $6ED7C  used  1x  sprite 288  
+   78  $6ED80  used  1x  sprite 288  
+   79  $6E152  used  1x  sprite 290  
+   80  $6EB88  used  1x  sprite 200  
+   81  $6E8A2  used  1x  sprite 297  
+   82  $6E118  used  1x  sprite 290  
+   83  $6EA40  used  1x  sprite 106  
+   84  $6E120  used  1x  sprite 290  
+   85  $6DA14  used  1x  sprite 87   
+   86  $6FC9C  used  1x  sprite 156  
+   87  $6D8A0  used  1x  sprite 230  
+   88  $6DDAA  used  1x  sprite 110  
+   89  $6E462  used  1x  sprite 85   
+   90  $6E478  used  1x  sprite 85   
+   91  $6E47C  used  1x  sprite 85   
+   92  $6E474  used  1x  sprite 85   
+   93  $6ED88  used  1x  sprite 288  
+   94  $6E75A  used  1x  sprite 154  
+   95  $6E02E  used  1x  sprite 106  
+   96  $6E55E  used  1x  sprite 53   
+   97  $6E552  used  1x  sprite 53   
+   98  $6DE62  used  1x  sprite 104  
+   99  $6ED8C  used  1x  sprite 288  
+  100  $6D21E  used  1x  sprite 140  
+  101  $6E56E  used  1x  sprite 53   
+  102  $6E74E  used  1x  sprite 154  
+  103  $6ECD6  used  1x  sprite 114  
+  104  $6E752  used  1x  sprite 154  
+  105  $6EB7E  used  1x  sprite 200  
+  106  $6E96C  used  1x  sprite 100  
+  107  $6FCFA  used  1x  sprite 116  
+  108  $6DE5E  used  1x  sprite 104  
+  109  $6DDA2  used  1x  sprite 110  
+  110  $6E562  used  1x  sprite 53   
+  111  $6FCEE  used  1x  sprite 114  
+  112  $6DF18  used  1x  sprite 130  
+  113  $6FD06  used  1x  sprite 124  
+  114  $708A2  used  1x  sprite ?    
+  115  $70512  used  1x  sprite 80   final boss (level 11)

@@ -1,0 +1,23 @@
+# Copyrighted inputs: bring your own
+*.adf
+*.rom
+
+# Emulator binaries: run get-emulator.sh / get-emulator.ps1
+Emulator/
+
+# FS-UAE runtime folders (created on first launch)
+Data/Cache/
+Data/CD-ROMs/
+Data/Configurations/
+Data/Data/
+Data/Hard Drives/
+Data/Save States/
+Data/Themes/
+
+# Generated from the game by tools/ (copies of its code and data)
+Research/chipmem.bin
+Research/*.asm
+Research/levels/*.bin
+
+.DS_Store
+__pycache__/

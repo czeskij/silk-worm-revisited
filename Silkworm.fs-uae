@@ -1,0 +1,50 @@
+[fs-uae]
+# Silkworm (1989, Virgin) - two-player co-op, Amiga 500 setup.
+# All paths are relative to this file, so the folder can live anywhere
+# (USB stick, Dropbox, another computer).
+
+title = Silkworm
+base_dir = $CONFIG/Data
+
+# --- Machine -------------------------------------------------------------
+amiga_model = A500
+kickstart_file = $CONFIG/Data/Kickstarts/kick13.rom
+# Fallback if the game misbehaves on 1.3 (it shouldn't):
+# kickstart_file = $CONFIG/Data/Kickstarts/kick31.rom
+
+floppy_drive_0 = $CONFIG/Data/Floppies/Silkworm.adf
+floppy_drive_0_sounds = default
+
+# --- Controllers ---------------------------------------------------------
+# First pad  -> Amiga joystick port 2 (player 1 / helicopter)
+# Second pad -> Amiga joystick port 1 (player 2 / jeep)
+# With no pad connected, port 2 falls back to the keyboard
+# (arrow keys + Right Ctrl / Right Alt to fire).
+joystick_port_1 = auto
+joystick_port_1_mode = joystick
+joystick_port_0 = JOYSTICK #2
+joystick_port_0_mode = joystick
+
+# Pad buttons are laid out by FS-UAE's Amiga profile:
+#   D-pad / left stick = move      Cross (south)  = fire
+#   Circle (east)      = up/jump   Triangle       = fire
+#   R2 = autofire (hold)  L2 = toggle autofire
+#   Share/Select = pause  Options/Start = FS-UAE menu (save/load state, quit)
+joystick_deadzone = 25
+
+# Don't grab the mouse - the game is joystick-only.
+initial_input_grab = 0
+automatic_input_grab = 0
+
+# --- Video ---------------------------------------------------------------
+fullscreen = 1
+fullscreen_mode = desktop
+keep_aspect = 1
+zoom = auto
+video_sync = auto
+texture_filter = linear
+# Light CRT look. Comment out for a clean picture, or try
+# shader = crt-lottes   (heavier, needs a decent GPU)
+scanlines = 1
+scanlines_dark = 20
+scanlines_light = 5

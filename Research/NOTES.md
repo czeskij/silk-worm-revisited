@@ -1,0 +1,168 @@
+# Silkworm (Amiga) — disassembly notes
+
+Source disk: `Data/Floppies/Silkworm.adf` (Defjam/CCS/Spreadpoint crack, 1989).
+
+## Files here
+
+| File | What it is |
+|---|---|
+| `bootblock.asm` | Boot block (the crack's trackloader), fully disassembled |
+| `chipmem.bin` | 512 KB chip RAM as it looks when the game starts (rebuilt from the disk) |
+| `game_traced.asm` | Main program, traced from its entry point and VBL handler; data shown as `dc.b` |
+| `loading_screen.png` | The crack's loading picture, decoded from tracks 3–9 |
+| `levels/` | Background of every level (PNG) and the raw per-level blocks |
+| `waves/` | Enemy wave list, per-level timelines and a legend of enemy types |
+| `sprites.png` | All 400 sprite/bob objects in level 1's palette |
+| `sprites_by_level/` | The same sheet in each level's palette (scenery colours change) |
+| `tools/` | The Python scripts that produced all of the above |
+
+Re-run everything (needs `pip install capstone` for the disassemblers):
+
+```
+python3 tools/extract.py ../Data/Floppies/Silkworm.adf .
+python3 tools/trace68k.py chipmem.bin game_traced.asm 0x68488 0x6af38 --range 0x3FFE0 0x7F3E0
+python3 tools/sprites.py chipmem.bin sprites.png 0x67772      # level 1 palette
+python3 tools/levels.py ../Data/Floppies/Silkworm.adf chipmem.bin levels
+python3 tools/waves.py chipmem.bin waves
+```
+
+To include the enemy routines in `game_traced.asm`, pass their addresses as extra
+entries (they're computed at runtime, so the tracer can't find them alone) —
+the list is in `waves/waves.txt` (legend section).
+
+## Disk layout
+
+Not an AmigaDOS disk. The boot block (“Spam & Spam Disk Load v1.0”) drives the
+floppy hardware directly (sync `$4489`, standard 11-sector MFM, `$55555555` decode).
+
+Both loaders pick the head from bit 0 of their track counter **inverted** (an even
+number selects head 1), and the next-track routine (`$300` in the boot block,
+`$6BBB4` in the game) toggles that bit and steps the drive only every other call.
+So track number *n* (even) reads ADF tracks **n+1, n+3, n+2, n+5, n+4 …** —
+reading the ADF linearly gives scrambled data. `tools/extract.py:track_order`
+simulates this.
+
+| Track number | ADF tracks read | Loaded to | Content |
+|---|---|---|---|
+| — | 0–1 | — | boot block |
+| 2 (×6) | 3,5,4,7,6,9 | `$20000` | loading picture: 320×200, 4 bitplanes, palette `$27D00` |
+| 10 (×46) | 11,13,12 … 55,57 | `$3FFE0–$7F3E0` | main program + data |
+| 80–112 (×4 each) | 81–116 | `$18E4` | per-level background blocks (see Levels) |
+| — | 120–159 | — | empty |
+
+After loading, the boot block writes `moveq #0,d0 / rts` at `$6ACB0` (the crack's
+patch over the original protection) and jumps to **`$68488`**.
+
+A small anti-tamper check XORs the `-----PROTEC-----` string and hangs if it was edited.
+
+## Program
+
+- Entry `$68488`: `ori #$700,sr`, stack `$80000`, **A6 = `$8080`** → all game
+  variables are `-$xxxx(a6)`, i.e. in `$0080–$8080`.
+- Level-3 (VBL) interrupt handler: **`$6AF38`** (installed at `$6AF26`).
+- ~28 KB of code found by the tracer (7,800 instructions, 1,229 labels) when the
+  116 enemy routines are added as entries. Indirect calls (`jsr (a0)` at
+  `$6AF68`, `jsr (a4)` at `$6BDA0`) still hide some routines.
+- Note: many routines keep a **game object** pointer in `a4`, so the listing's
+  `; if a4=$DFF000: …` hints are only meaningful where `a4` really is `$DFF000`.
+
+### Controls
+
+- `$6AFA0` reads `JOY0DAT`/`JOY1DAT` + CIA fire bits each frame into
+  `$01E2` (port 0) and `$01E4` (port 1); keyboard state goes to `$01E6`.
+  Format: low nibble = direction (table at `$6AFDC`), bit 7 = fire.
+- Each vehicle has an input-source variable — `$02D0` and `$0342`:
+  **0 = joystick port 0, 1 = joystick port 1, 2 = keyboard**.
+  Defaults set at start-up: `$02D0 = 1`, `$0342 = 2`, so one vehicle starts on
+  the keyboard. The title screen's “PRESS FUNCTION KEYS TO SELECT CONTROLS” changes it.
+
+### Graphics
+
+- Setup routine `$715C0` relocates 400 object records and builds their masks.
+- Pointer table `$4A498` (400 longs, record = value + `$5F3B8`).
+- Record: `+0` width (words), `+2` rows, `+6/+8` hotspot, `+$E` pixel offset from `$4AAD8`.
+- Pixels: row-interleaved, 4 bitplanes per row. Masks are built at runtime into `$2AE6C+`.
+- Palettes: `sub_69BC8` copies 32 colours from `a0` into the target palette at
+  `-$7FBC(a6)`; the fader at `$6C398` blends the live palette towards it.
+  - **Level palettes: `$67732 + level × 64`** (levels 0–11), picked by the level
+    number in `-$7F20(a6)` at `$6B98A`. Colours 0–9 are shared by vehicles/enemies/
+    explosions; 10–15 are per-level scenery; 16–31 are hardware-sprite colours.
+  - Menu/text palettes: `$676D2`, `$676F2`, `$67712`.
+- `sprites.png` uses level 1's palette; `sprites_by_level/` has one sheet per level.
+
+### Levels
+
+Level number lives in `-$7F20(a6)`: **1–11 are the game's levels, 12 is the ending**
+(skips the palette); 0 is unused by the loader.
+
+- **Loader `$6B93E`**: track number from the word table at `$6B924 + level×2`
+  (L1–12: 80, 84, 88, 92, 84, 96, 100, 96, 88, 104, 108, 112), reads 4 tracks
+  (22 KB) to `$18E4`. Levels sharing a block (2/5, 3/9, 6/8) differ by palette
+  and column stream.
+- **Per-level table `$69E3C + level×12`**: three stream pointers →
+  `-$7FDA` backdrop column stream (drawn into `$70E4`),
+  `-$7FD6` second column layer (near ground, drawn into `$1D8E4` by
+  `$6A966`/`$6A992`; `-$7FDC` can force special columns `$5A`/`$5B`),
+  `-$7E5A` ground scenery: words = sprite number, negative = wait N columns;
+  queued with an X position in the ring buffer `$69CC2`, drawn by `$69C88` → `sub_712AA`.
+- **Block format**: 20 columns × 9 word offsets (360 bytes), then 128-byte cells.
+  A cell is 16×16 pixels, 4 bitplanes interleaved per row; a column is 9 cells
+  stacked = 16×144 pixels.
+- **Scroller `$69D9A`**: every 16 pixels of scroll it reads one byte (column
+  number) from the stream; a negative byte loops back to the start. Columns are
+  drawn into the background buffer at `$70E4` by `$6A900`/`$6A934`.
+- `levels/level_NN.png`: one pass of each level's backdrop in its own palette;
+  `levels/block_NNN.bin`: the raw blocks (named by track number).
+### Enemy waves
+
+Enemies are cooperative **tasks**: `sub_6C4E2` spawns one, `sub_6C564` yields a
+frame, `sub_6C7D4` waits `d0` frames, `a5` = current task/object.
+Object fields seen so far: `(a5)` X and `4(a5)` Y (16.16), `$14`/`$18` velocity,
+`$26`/`$2C`/`$30` animation state, `$32` current sprite number.
+
+- **Scheduler `$6EEF6`**: script for level *n* at long `$6EEA0 + (n−1)×4`.
+  Pairs of words `(clock, action)` until clock < 0. When the level clock
+  `-$7FD2(a6)` reaches `clock`, it runs `$6D21E + |action|`
+  (action < 0 → its own task, else via `sub_6C852`).
+- **Wave routines** are mostly stubs: `moveq #count,d0 / bra common`. The common
+  part calls **`loc_6FADA`** = spawn `d0` copies of the child behaviour in `a0`,
+  `d1` frames apart.
+- **Animations**: `sub_6C8F6` (a0 = list) or `sub_6C8DA` (list inline after the
+  `bsr`; code continues after `$FFFF`), or `move.w #n,$32(a5)` for a still frame.
+  Lists are sprite numbers from the 400-object bank (bit 14/13 = control words,
+  `$FFFF` = loop). Some behaviours index their list by `level × 8`, so the same
+  enemy changes look per level.
+- Every level's script ends with the boss at clock **4704** (alternating
+  `$705D0` / `$6DB1E`); level 11 ends at 4792 with `$70512`.
+  `$6E03A` is a gun emplacement built into the ground layer; `$6F736` is a
+  palette flash effect, not an enemy.
+- `waves/waves.txt`: every wave of every level (clock, routine, group size,
+  sprites found). 569 of 604 waves resolve to sprites by static analysis.
+  `waves/waves_level_NN.png`: timeline per level (bar = clock, icons = group).
+  `waves/legend.png`: all 116 routines with their main sprite.
+
+### Sound
+
+- Music/SFX player at `$71666`: jump table `init / play / ? / stop`.
+  The start-up code points it at the sound bank **`$71D74`** (custom format: offset
+  table to songs and instrument tables; song number in `d0`).
+- A separate 15-instrument SoundTracker header `silkwormtitle` sits at `$7AAAC`
+  (6 instruments, 10 patterns) — its samples are not stored after it, so it may be
+  a leftover or uses the bank's samples.
+
+### Text
+
+Menus, high-score table, credits and the ending text are plain ASCII at
+`$67A32–$6845F` (`$` is the line break). The credits screen lists the Random
+Access team with joke nicknames; the Amiga programmer is Ronald “Pieket Weeserik”
+MacDonald, the ST programmer John Croudy.
+
+## Next steps
+
+1. ~~Find the in-game palette~~ — done (see Graphics).
+2. ~~Level backdrops~~ and ~~enemy waves~~ — done. Still to do: render the
+   near-ground layer and the scenery stream, then compose full level maps;
+   work out what one clock tick is (frames vs scroll pixels).
+3. Reverse the sound bank format and player → export tunes/SFX as .mod/.wav.
+4. Name variables in the `$0080–$8080` block (scores, lives, positions) — useful
+   for trainers, a patched default “2 joysticks” control setup, or a reimplementation.
