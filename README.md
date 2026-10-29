@@ -33,6 +33,8 @@ scripts. Extracted images:
 - `Research/sprites.png`, `Research/sprites_by_level/`
 - `Research/levels/level_NN.png`: scrolling backdrop of each level
 - `Research/waves/`: enemy waves per level, and a legend of enemy types
+- `Research/maps/map_level_NN.png`: full map of each level with scenery and
+  where every enemy wave comes in
 
 Regenerate everything (including the disassembly listings, which aren't
 committed) from your own ADF with the scripts in `Research/tools/`. They need

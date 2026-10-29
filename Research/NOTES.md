@@ -12,6 +12,7 @@ Source disk: `Data/Floppies/Silkworm.adf` (Defjam/CCS/Spreadpoint crack, 1989).
 | `loading_screen.png` | The crack's loading picture, decoded from tracks 3–9 |
 | `levels/` | Background of every level (PNG) and the raw per-level blocks |
 | `waves/` | Enemy wave list, per-level timelines and a legend of enemy types |
+| `maps/` | Full map of every level: backdrop, ground, scenery and enemy entry points |
 | `sprites.png` | All 400 sprite/bob objects in level 1's palette |
 | `sprites_by_level/` | The same sheet in each level's palette (scenery colours change) |
 | `tools/` | The Python scripts that produced all of the above |
@@ -24,6 +25,7 @@ python3 tools/trace68k.py chipmem.bin game_traced.asm 0x68488 0x6af38 --range 0x
 python3 tools/sprites.py chipmem.bin sprites.png 0x67772      # level 1 palette
 python3 tools/levels.py ../Data/Floppies/Silkworm.adf chipmem.bin levels
 python3 tools/waves.py chipmem.bin waves
+python3 tools/maps.py ../Data/Floppies/Silkworm.adf chipmem.bin maps
 ```
 
 To include the enemy routines in `game_traced.asm`, pass their addresses as extra
@@ -113,6 +115,26 @@ Level number lives in `-$7F20(a6)`: **1–11 are the game's levels, 12 is the en
   drawn into the background buffer at `$70E4` by `$6A900`/`$6A934`.
 - `levels/level_NN.png`: one pass of each level's backdrop in its own palette;
   `levels/block_NNN.bin`: the raw blocks (named by track number).
+### Scrolling and full maps
+
+- **Scroll step `sub_69C4A`** runs once per pixel of ground scroll: level clock
+  `-$7FD2` += 1 (so **wave clock = ground pixels**, a level is 4,704 px),
+  ground counter += 1, backdrop counter += 1 every other step (half-speed
+  parallax), and every 32 steps the scenery stream steps (`sub_69D52`).
+- **Ground layer**: stream `-$7FD6`, one byte per 16 px; column *n* is 192 bytes
+  at `$62272 + n×$C0` = 16×24 pixels, 4 bitplanes interleaved per row. The ground
+  bank is in the main program and shared by all levels.
+- **Scenery**: stream `-$7E5A`, one word per 32 px slot: sprite number, `0` =
+  empty slot, negative *w* = skip `−w−1` slots. Object world X = scroll + `$150`,
+  drawn by `sub_712AA` at Y = `$90 − $F` minus the sprite's hotspot (`+6`/`+8` in
+  its record; hotspot Y is always height − 17, so every object stands on one
+  ground line). Levels 6 and 8–11 point at a stream starting with −10000, i.e.
+  no scenery objects.
+- `maps/map_level_NN.png`: full level (4,704 px + one screen): backdrop
+  (shown 1:1 and looping; in game it moves at half speed), ground strip, scenery
+  objects, and a band below with an icon where each enemy wave enters
+  (clock + 320 px). Vertical lines in the band mark every screen width.
+
 ### Enemy waves
 
 Enemies are cooperative **tasks**: `sub_6C4E2` spawns one, `sub_6C564` yields a
@@ -160,9 +182,9 @@ MacDonald, the ST programmer John Croudy.
 ## Next steps
 
 1. ~~Find the in-game palette~~ — done (see Graphics).
-2. ~~Level backdrops~~ and ~~enemy waves~~ — done. Still to do: render the
-   near-ground layer and the scenery stream, then compose full level maps;
-   work out what one clock tick is (frames vs scroll pixels).
+2. ~~Level backdrops~~, ~~enemy waves~~ and ~~full level maps~~ — done.
+   Open: enemy flight paths (so the band could show where enemies actually fly),
+   and the HUD/status panel layout.
 3. Reverse the sound bank format and player → export tunes/SFX as .mod/.wav.
 4. Name variables in the `$0080–$8080` block (scores, lives, positions) — useful
    for trainers, a patched default “2 joysticks” control setup, or a reimplementation.
