@@ -78,6 +78,38 @@ A small anti-tamper check XORs the `-----PROTEC-----` string and hangs if it was
   Defaults set at start-up: `$02D0 = 1`, `$0342 = 2`, so one vehicle starts on
   the keyboard. The title screen's “PRESS FUNCTION KEYS TO SELECT CONTROLS” changes it.
 
+### Frame loop
+
+The frame routine `$6963E` runs from the VBL interrupt (via `-$7E98` at `$6AF64`),
+i.e. **50 times a second** on PAL: read joysticks (`$6AFA0`) and keyboard,
+run every task once (`sub_6C4AE`), scroll one step (`sub_69C4A`).
+
+### Players
+
+Two tasks start with each level, before the wave scheduler (`$6EECC`):
+**jeep `$6EFB8`** (object `-$7D9A`, input source `-$7D3E`) and
+**helicopter `$6F148`** (object `-$7E0C`, input source `-$7DB0`).
+
+- Direction table `$6F244`: 16 × (dx, dy) words indexed by the joystick byte's
+  low nibble. Both vehicles move 2× that, 3× with their speed power-up
+  (`-$7D8E` jeep, `-$7E00` helicopter). X is kept in 30–300.
+- **Helicopter**: starts (64, 64); Y kept in 24–122. Sprites 0–3 are poses
+  (level, tilt right 1/2, tilt left 3), 4–7 the same with the rotor in its other
+  position; animations alternate them.
+- **Jeep**: starts (64, `$98`); `$98` is ground level. `sub_6F386`: on a joystick,
+  up without fire becomes **jump** (bit `$40`), and up/down are dropped. Jump:
+  Y speed −3.0, gravity +0.125 per frame (16.16), lands at > `$99`. With fire
+  held, up/down turn the gun (`$64`, 0–16, one step per 2 frames, an extra
+  8-frame stop at 7). Sprite = 10 + (angle + 1) / 2; 20/21 while jumping.
+- **Firing** (`sub_6F284` heli, `sub_6F2F4` jeep): fire held auto-repeats every
+  `$5E(player)` frames (10 at start). Heli: shot at angle 0 from (x+8, y+2) plus
+  one at angle 32 (45° down). Jeep: shot at angle −gun×8 from (x−8, y−5), plus the
+  45° shot while airborne. Weapon power-ups (`-$7E02` heli, `-$7D90` jeep) add a
+  second shot. All shots: speed `$E00` (14 px/frame), angle via the 256-step
+  sine table at `$6D01E` (`sub_6D006`), die at Y ≥ `$9E` or off screen.
+  Shot sprites are `$2xx` (hardware sprites, `bclr #9` path in `sub_712AA`).
+- Joystick byte: bit 0 up, 1 down, 2 left, 3 right, 7 fire (table `$6AFDC`).
+
 ### Graphics
 
 - Setup routine `$715C0` relocates 400 object records and builds their masks.

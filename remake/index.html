@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silkworm Revisited</title>
+<style>
+  :root { color-scheme: dark; --bg: #0b0b10; --fg: #ddd; --accent: #ffe066; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+               font: 15px/1.5 system-ui, sans-serif; }
+  #wrap { position: fixed; inset: 0; display: grid; place-items: center; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: none; }
+  #picker { max-width: 34em; padding: 0 16px; text-align: center; }
+  #picker h1 { color: var(--accent); font-size: 1.6em; margin-bottom: .2em; }
+  #picker label { display: inline-block; margin-top: 1em; padding: .6em 1.2em; border-radius: 6px;
+                  background: var(--accent); color: #111; font-weight: 600; cursor: pointer; }
+  #picker input { display: none; }
+  #err { color: #ff8080; min-height: 1.5em; }
+  small { color: #999; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="picker">
+    <h1>Silkworm Revisited</h1>
+    <p>A two-player remake that reads everything from your own copy of the
+       Amiga game. Pick your Silkworm <b>.adf</b> disk image to start; the browser
+       remembers it for next time.</p>
+    <label>Choose Silkworm.adf<input id="file" type="file" accept=".adf"></label>
+    <p id="err"></p>
+    <small>Supported: the Defjam/CCS release (the one this project was analysed from).
+           Nothing is uploaded; the file stays in your browser.</small>
+  </div>
+  <canvas id="screen" width="320" height="200"></canvas>
+</div>
+<script src="js/hints.js"></script>
+<script src="js/adf.js"></script>
+<script src="js/gfx.js"></script>
+<script src="js/input.js"></script>
+<script src="js/game.js"></script>
+<script>
+"use strict";
+(function () {
+  const canvas = document.getElementById("screen");
+  const picker = document.getElementById("picker");
+  const err = document.getElementById("err");
+
+  function fit() {
+    const s = Math.max(1, Math.floor(Math.min(innerWidth / 320, innerHeight / 200)));
+    canvas.style.width = 320 * s + "px";
+    canvas.style.height = 200 * s + "px";
+  }
+  addEventListener("resize", fit);
+  canvas.addEventListener("dblclick", () => document.documentElement.requestFullscreen && document.documentElement.requestFullscreen());
+
+  function start(bytes) {
+    const adf = new Uint8Array(bytes);
+    const mem = SW.adf.buildMemory(adf);
+    const problem = SW.adf.validate(adf, mem);
+    if (problem) { err.textContent = problem; return false; }
+    SW.gfx.init(adf, mem);
+    const q = new URLSearchParams(location.search);
+    SW.game.init(canvas, Number(q.get("level")) || 1, Number(q.get("t")) || 0);
+    picker.style.display = "none";
+    canvas.style.display = "block";
+    fit();
+    let last = performance.now(), acc = 0;
+    const STEP = 20;   // 50 Hz, like the PAL original
+    (function loop(now) {
+      acc += Math.min(200, now - last); last = now;
+      while (acc >= STEP) { SW.game.step(); acc -= STEP; }
+      SW.game.draw();
+      requestAnimationFrame(loop);
+    })(last);
+    return true;
+  }
+
+  document.getElementById("file").addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const bytes = await f.arrayBuffer();
+    if (start(bytes)) SW.store.put("adf", bytes);
+  });
+
+  // ?adf=path loads the disk from a local web server (handy for development)
+  const url = new URLSearchParams(location.search).get("adf");
+  if (url) fetch(url).then((r) => r.arrayBuffer()).then(start).catch((e) => { err.textContent = String(e); });
+  else SW.store.get("adf").then((bytes) => { if (bytes) start(bytes); });
+})();
+</script>
+</body>
+</html>

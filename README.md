@@ -23,6 +23,13 @@ Controls and pad pairing are described in [README.txt](README.txt). On the title
 screen, use the function keys to set each vehicle to a joystick (by default
 the game puts one of them on the keyboard).
 
+## Remake
+
+[remake/](remake/) is a browser remake (two players, keyboard or gamepads) that
+reads its graphics, levels and wave scripts from your ADF. Open
+`remake/index.html` and pick the disk. Details and what's still approximated
+are in [remake/README.md](remake/README.md).
+
 ## Reverse engineering
 
 [Research/NOTES.md](Research/NOTES.md) covers the disk format, the boot loader,
