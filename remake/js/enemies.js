@@ -119,7 +119,8 @@ SW.enemies = (function () {
   function missile(x, y, angle, launch, steps, ay, opts) {
     const o = opts || {};
     const speed = o.speed || 2.5;
-    const e = obj({ kind: "missile", x, y, ground: true, hw: 8, hh: 8, score: 1, angle });   // $1C/$1E = 8 (loc_707C0)
+    const e = obj({ kind: "missile", x, y, ground: true, hw: 8, hh: 8, score: 1, angle, pitch: 0x180 });
+    SW.sound.fx.launch();                                  // loc_707C0   // $1C/$1E = 8 (loc_707C0)
     velocity(e, angle, speed);
     e.ay = ay || 0;
     if (o.vx !== undefined) e.vx = o.vx;
@@ -237,7 +238,7 @@ SW.enemies = (function () {
   // $6DD16: bomb: falls, then rolls toward the jeep.
   // $6DCB4 (boss B): waits 0-31 frames, then is thrown up (vy -2) and left.
   function bomb(x, y, thrown) {
-    const e = obj({ kind: "bomb", x, y, ay: 0xa00 / 65536, hw: 5, hh: 5, score: 1 });
+    const e = obj({ kind: "bomb", x, y, ay: 0xa00 / 65536, hw: 5, hh: 5, score: 1, pitch: 0xc0 });
     setAnim(e, [60, 60, 61], 12);
     return spawn(e, function* (e) {
       if (thrown) {
@@ -764,7 +765,7 @@ SW.enemies = (function () {
                     touchKills: false });
     setAnim(e, [34, 35]);
     e.onHit = (e) => { if (e.hp === 3) setAnim(e, [36, 37]); };
-    e.onDeath = () => { W.destroyAll(); W.flash = 30; };
+    e.onDeath = () => { W.destroyAll(); W.flash = 30; SW.sound.fx.smartBomb(); };
     return spawn(e, drift);
   }
 
@@ -997,7 +998,7 @@ SW.enemies = (function () {
   // $70512, level 11: final boss, 150 hits, churns through sprites 310-313
   function bossFinal() {
     W.stopScroll = 1;
-    const e = bossObj({ x: 0x119, y: 0x62, hp: 150, score: 50, shootable: true, touchKills: false,
+    const e = bossObj({ x: 0x119, y: 0x62, hp: 150, score: 50, shootable: true, touchKills: false, final: true,
                         onDeath: (e) => { bossDies(e); W.gameWon = true; } });
     e.spr = 310;
     e.onHit = (e) => W.boom(e.x + W.rand(32) - 16, e.y + W.rand(32) - 16, 0);

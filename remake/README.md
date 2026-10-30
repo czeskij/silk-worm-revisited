@@ -34,7 +34,7 @@ server, `?level=N` starts at level N, `?t=N` starts N pixels into the level
 
 Pads: d-pad or left stick moves, Cross/Square/R1/R2 fire, Circle/Triangle jump,
 Options pauses. Press fire on a vehicle's controller to join, also mid-game.
-P or Esc pauses; double-click goes fullscreen.
+P or Esc pauses; N turns sound on/off; double-click goes fullscreen.
 
 ## What's faithful and what isn't (yet)
 
@@ -54,6 +54,8 @@ From the disassembly (see `../Research/NOTES.md`):
   the screen flash and the screen clear
 - shots and missiles with their real hardware-sprite graphics, pointing the
   way they fly
+- the original sound effects (samples from your ADF, played at the game's
+  periods and channels)
 - enemy hit points as in the original (tanks take 6 hits, blimps 8, ...)
 - the shield item (300 frames, rams enemies it touches; a second pickup while
   shielded, or 18 shots at it, sets off a smart bomb) and the bonus carrier: a
@@ -70,4 +72,4 @@ Approximated for now:
   vehicle's later movement, the emplacement's projectile, the swirling planes'
   loop speed
 - losing upgrades on death is assumed
-- no sound, simple HUD
+- no music yet, simple HUD

@@ -33,12 +33,13 @@
   </div>
   <canvas id="screen" width="320" height="200"></canvas>
 </div>
-<script src="js/hints.js?v=14"></script>
-<script src="js/adf.js?v=14"></script>
-<script src="js/gfx.js?v=14"></script>
-<script src="js/input.js?v=14"></script>
-<script src="js/enemies.js?v=14"></script>
-<script src="js/game.js?v=14"></script>
+<script src="js/hints.js?v=15"></script>
+<script src="js/adf.js?v=15"></script>
+<script src="js/gfx.js?v=15"></script>
+<script src="js/input.js?v=15"></script>
+<script src="js/sound.js?v=15"></script>
+<script src="js/enemies.js?v=15"></script>
+<script src="js/game.js?v=15"></script>
 <script>
 "use strict";
 (function () {
@@ -60,6 +61,9 @@
     const problem = SW.adf.validate(adf, mem);
     if (problem) { err.textContent = problem; return false; }
     SW.gfx.init(adf, mem);
+    SW.sound.init(mem);
+    addEventListener("keydown", () => SW.sound.unlock());
+    addEventListener("pointerdown", () => SW.sound.unlock());
     const q = new URLSearchParams(location.search);
     SW.game.init(canvas, Number(q.get("level")) || 1, Number(q.get("t")) || 0, q.get("god") === "1");
     picker.style.display = "none";

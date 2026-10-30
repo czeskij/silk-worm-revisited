@@ -408,6 +408,25 @@ the next level loads. Each of their attacks fires with probability 87.5 %
 
 ### Sound
 
+**Effects** (`sub_6B1E0`: `d0` period, `d1` volume, `d2` sample, `d3` channel):
+7 samples in a table at `$6B1A8` (address, length, loop offset; all
+one-shot), 8-bit signed, played on one of the 4 channels (a new sound cuts
+the previous one; rate = 3546895 / period). The state per channel is at
+`-$7F16` (20 bytes each), updated by `sub_6B2A6`.
+
+| Sample | Use (call site) | Period, channel |
+|---|---|---|
+| 0 | enemy destroyed (`sub_6F9E4`) | 320–351 + object pitch `$36` (missile `$180`, bomb `$C0`), ch 1 + 2 |
+| 0 | player destroyed (`$6F584`) | `$C0`/`$C4`/`$C8`/`$CC` on all 4 |
+| 1 | shot hits, target survives (`$6F4DE`); bonus tally tick (`$6AC7E`) | `$200` ch 2; `$300` ch 2 |
+| 2 | reward collected (`sub_6E3A8`) | `$2C0` ch 3 |
+| 3 | missile / shell launched (`loc_707C0`) | `$200` ch 3 |
+| 4 | smart bomb (`$6F6DA`) | `$C0`–`$CC` on all 4 |
+| 5 | boss hit (`$6F8E0`), carrier hit (`$6FF54`), final boss hit (`$6E224`) | `$1E0`/`$1E4`, `$240`/`$244`, `$C0`/`$C4`, ch 2 + 3 |
+| 6 | player shot fired (`loc_6F472`) | `$180`, volume `$20`, ch 0 |
+
+**Music**:
+
 - Music/SFX player at `$71666`: jump table `init / play / ? / stop`.
   The start-up code points it at the sound bank **`$71D74`** (custom format: offset
   table to songs and instrument tables; song number in `d0`).

@@ -16,7 +16,7 @@ SW.game = (function () {
   let state = "title", level = 1, lv, scroll, clock, waves, waveIdx, scenery;
   let players, shots, enemies, booms, rng = 12345, frame = 0, banner = 0, endTimer = 0;
   let paused = false, pauseLatch = false, first = 1;
-  let lastInputs = [0, 0], lastState = "", stateTimer = 0;
+  let lastInputs = [0, 0], lastState = "", stateTimer = 0, muteLatch = false;
   const world = {};   // what enemies.js sees
 
   function rand(n) { rng = (rng * 1103515245 + 12345) >>> 0; return (rng >>> 8) % n; }
@@ -98,6 +98,7 @@ SW.game = (function () {
   function fire(x, y, angle, from, spr) {
     const s = 14 / 256;
     shots.push({ x, y, vx: sin[(angle + 64) & 255] * s, vy: sin[angle & 255] * s, from, spr });
+    SW.sound.fx.shot();
   }
   const HELI_SHOT = 0x42, DIAGONAL_SHOT = 0x02;                // $242 ($6F45E), $202 ($6F3C2/$6F3DC)
   const jeepShot = (gun) => ((0x10000 - gun) >> 1) & 15;       // $6F428: $200 + (-gun >> 1 & 15)
@@ -168,6 +169,7 @@ SW.game = (function () {
   function killPlayer(p) {
     if (god || p.dead || p.inv > 0 || p.shield > 0) return;
     booms.push({ x: p.x, y: p.y, f: 0 });
+    SW.sound.fx.playerDeath();
     p.dead = 1; p.lives--;
     p.power = 0; p.speed = 0; p.rate = 10; p.shield = 0;     // upgrades are lost with the life
   }
@@ -223,6 +225,7 @@ SW.game = (function () {
       if (e.kind !== "boss" && e.kind !== "carrier" && e.kind !== "powerup") countKill(e);
     }
     booms.push({ x: e.x, y: e.y, f: 0 });
+    if (e.kind !== "powerup") SW.sound.fx.explode(e.pitch);   // sub_6F9E4
     if (e.kind === "boss") for (let k = 0; k < 6; k++) booms.push({ x: e.x + rand(40) - 20, y: e.y + rand(30) - 15, f: -k * 5 });
     if (e.onDeath) e.onDeath(e);
     if (e.wreck != null) {
@@ -246,6 +249,10 @@ SW.game = (function () {
     if (paused) return;
 
     const inputs = players.map((p, i) => I.read(i));
+    if (inputs[0] || inputs[1]) SW.sound.unlock();            // audio needs a user gesture
+    const muteKey = I.pressed("KeyN");
+    if (muteKey && !muteLatch) SW.sound.toggle();
+    muteLatch = muteKey;
     const fresh = inputs.map((v, i) => (v & I.FIRE) && !(lastInputs[i] & I.FIRE));
     lastInputs = inputs;
     if (state !== lastState) { lastState = state; stateTimer = 0; }
@@ -320,6 +327,11 @@ SW.game = (function () {
         if (t.invulnerable) break;                           // e.g. the transport plane: shots just stop
         t.hp--;
         if (t.kind === "boss") t.blink = 3;                   // $6F8E0: flash on each hit
+        if (t.hp > 0) {
+          if (t.kind === "boss") (t.final ? SW.sound.fx.finalBossHit : SW.sound.fx.bossHit)();
+          else if (t.kind === "carrier") SW.sound.fx.carrierHit();
+          else SW.sound.fx.hit();                             // $6F4DE: hit, target survives
+        }
         if (t.onHit) t.onHit(t);
         if (t.hp <= 0) { destroy(t, s.from); break; }
       }
@@ -336,13 +348,14 @@ SW.game = (function () {
         if (e.kind === "pickup") {
           if (e.owner !== p) continue;                    // icons are per player ($64 vs -$7E36)
           e.alive = false;
+          SW.sound.fx.reward();                           // sub_6E3A8
           if (e.type === "power") p.power = 1;            // $6E34C: second shot
           else if (e.type === "speed") { p.speed = 1; p.rate = 5; }   // $6E36A: 3x speed, rapid fire
           else { p.score += 5000; p.inv += 200; }         // $6E388: points, invulnerability
         } else if (e.kind === "powerup") {
           e.alive = false;
           // $6F94E: already shielded -> the smart bomb ($6F6B6), else a 300-frame shield
-          if (p.shield > 0) { world.destroyAll(); world.flash = 30; }
+          if (p.shield > 0) { world.destroyAll(); world.flash = 30; SW.sound.fx.smartBomb(); }
           else p.shield = 300;
         } else if (p.shield > 0 && e.shootable && !e.invulnerable && !e.background) {
           // sub_6CA70: a shielded player rams enemies, 1 hit every 4 frames
