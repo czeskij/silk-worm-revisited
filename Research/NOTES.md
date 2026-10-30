@@ -252,7 +252,24 @@ More families (together with the above and the bosses: **84 % of all waves**):
 | `6ED8E` (`6ED84` ×4, `6ED88` ×6, `6ED8C` ×15, 32 frames apart) | seeker (288/289) | released at x `$145`, heights stepping 16 (wrapping 56–120); speed 3.1 slowing to 0.8, turns ≤ 16 a frame toward its target until past it |
 | `6EACE` (`6EABE` / `6EAC2`, 28 frames apart) | blimp (83/84) | random y 32–95, −0.25 px/frame, zig-zags ±0.5 between y 64 and 134, score 8 |
 
-Still generic: about 100 waves from ~60 small families (level 11 has the most).
+Level 11 families (and their other group sizes elsewhere) — with these,
+**94 % of all waves** (568/604) are decoded and level 11 is complete:
+
+| Routine | Enemy | Behaviour |
+|---|---|---|
+| `6DF28` (`6DF1C` ×3, `6DF18` ×2, 127 frames apart) | armoured car (130/132, wreck 134) | on the ground at (360, `$8E`), +0.5 px/frame against the scroll |
+| `6E130` (`6E10C`/`6E108`/`6E104` ×4/6/10, firing) / `6E152` (`6E118`–`6E124` ×14/10/6/4) | swirling plane (290/291) | from (32–287, 16) at angle 48–79, 1.25 px/frame for 85 frames, then turns ±8 per step for 100 steps, reversing at random (1 in 8) while above y 100 |
+| `6DE6E` (`6DE5A` ×2, `6DE5E` ×4, 40 frames apart) | descender (104/105) | from (148–211, 0), x −0.19; y +0.19 for 200–263 frames, +0.06 for 200–263, then −0.19 for 400; fires (first after 100 frames) |
+| `6D2B8` (`6D2AC`/`6D2A8`/`6D2A4` ×4/3/2) | hovering gunship (118/119) | from x 330 at y 50–113, −1 px/frame for 8–39 frames, stops, fires at each player 4–7 times 50 frames apart, leaves |
+| `6DDAC` (`6DDA6` ×4, `6DDA2` ×3) | sinker column (110/112) | 8 frames apart from (358, 40), each 18 px lower; x −0.125, y +0.5 |
+| `6ED3E` (`6FCFA` ×4) | low bomber (116/117) | y 134, −2 px/frame, a shot at angle `$70` every 10 frames |
+| `6ECE6` (`6FCEE` ×4, `6ECDA` ×3) | dasher (114/115 → 116/117) | y 40, −1 for 100 frames, then −5 firing every 5 frames |
+| `708A2` | screen clear | sets `-$67A0` (vehicle collision) for one frame, so every enemy on screen takes its "hit by vehicle" handler; then 7 palette flashes |
+| `6D40A` | 3 AA guns, 38 frames apart | |
+| `6DCF6` | a bomb at (330, 118) | |
+| `6DE56` | nothing (jumps to `loc_6C6FE`) | |
+
+Still generic: 36 waves from ~25 small families.
 
 **Projectiles**: `loc_707C0` missiles/shells: 2.5 px/frame, hitbox ±8, fly
 `d0` frames as fired (shell: straight up with extra upward acceleration), then
@@ -274,7 +291,7 @@ the next level loads. Each of their attacks fires with probability 87.5 %
 | Boss | Levels | Behaviour |
 |---|---|---|
 | `$705D0` gunship (sprites 240/242) | 1, 3, 5, 7, 9 | enters at (351, 64), −0.67 px/frame, 150 frames unshootable; `level×8 + 40` hits, hitbox ±16×±12, score 5. Loop: bomb (`$6DD16`), missile `$706EE` (dropped below it with acceleration, homes after 25 frames), an aimed shot at each player (`$6FB3A`), and from level 2 a drone (`$6E42E`, sprites 98/99, accelerates away left, can't be shot). Then for `(11 − level)×8 + 35` frames (`sub_70672`): accelerates (±`$600`) to stay within x 160–270 and moves at 0.375 px/frame toward the helicopter's height (or jeep x / 3 + 32, minimum y 40) |
-| `$6DB1E` ground vehicle (209/229, rear part `$6DC42` 218/238 at x−18, y+32) | 2, 4, 6, 8, 10 | enters at (368, 118), 110 frames unshootable, `level×8 + 40` hits. 14 rounds: aimed shots, a lobbed bomb (`$6DCB4`: after 0–31 frames thrown up at −2 and left at up to −4, then falls and rolls), an aimed missile (`$707BC`), 1 in 8 rounds 4 extra bombs; wait `(11 − level)×8 + 45` frames between rounds. Then forever: creep 1 px left every 14 frames bobbing ±1, firing a missile and a bomb each step, wrapping from x −32 back to 368 |
+| `$6DB1E` ground vehicle (209/229, rear part `$6DC42` 218/238 at x−18, y+32, hitbox ±32×±16; the remake assumes hits on it count against the boss, otherwise the jeep can't hit it) | 2, 4, 6, 8, 10 | enters at (368, 118), 110 frames unshootable, `level×8 + 40` hits. 14 rounds: aimed shots, a lobbed bomb (`$6DCB4`: after 0–31 frames thrown up at −2 and left at up to −4, then falls and rolls), an aimed missile (`$707BC`), 1 in 8 rounds 4 extra bombs; wait `(11 − level)×8 + 45` frames between rounds. Then forever: creep 1 px left every 14 frames bobbing ±1, firing a missile and a bomb each step, wrapping from x −32 back to 368 |
 | `$70512` final boss (310–313) | 11 | stationary at (281, 98), 150 hits (`$6E224`: small explosion per hit; at zero → `$703DA`, game end). Loop: 125 frames on a random frame each frame, launching a firing helicopter (`$6E588`) every 8 frames; 50 × (random frame, sprite 80); then a pod (`$6D616`: sprites 80–82, drifts left at 0.5 px/frame, fires 32 bullets every 4 frames turning 12 units each — a spiral; bullets fly 2 px/frame for 25 frames then aim at a player once) |
 
 ### Sound

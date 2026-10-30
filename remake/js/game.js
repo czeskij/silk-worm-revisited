@@ -69,7 +69,13 @@ SW.game = (function () {
     Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0,
                            stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false,
                            groundOverride: new Map(),   // ground column index -> column number
-                           boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }) });
+                           boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }),
+                           // $708A2: everything on screen counts as hit by a vehicle
+                           destroyAll: () => {
+                             for (const e of enemies.slice())
+                               if (e.alive && e.kind !== "boss" && e.kind !== "controller" && e.kind !== "wreck" &&
+                                   e.kind !== "part" && e.x > -16 && e.x < 336) destroy(e, null);
+                           } });
     E.attach(world);
     for (const pl of players) { pl.x = pl.startX; pl.y = pl.startY; pl.vy = 0; pl.inv = 100; }
   }
@@ -279,10 +285,12 @@ SW.game = (function () {
         const sb = { l: s.x - 2, r: s.x + 2, t: s.y - 2, b: s.y + 2 };
         if (!hit(eb, sb) && !(tb && hit(tb, sb))) continue;
         s.dead = true;
-        e.hp--;
-        if (e.kind === "boss") e.blink = 3;                   // $6F8E0: flash on each hit
-        if (e.onHit) e.onHit(e);
-        if (e.hp <= 0) { destroy(e, s.from); break; }
+        const t = e.forward || e;                            // linked parts pass hits on
+        if (!t.alive || !t.shootable) break;
+        t.hp--;
+        if (t.kind === "boss") t.blink = 3;                   // $6F8E0: flash on each hit
+        if (t.onHit) t.onHit(t);
+        if (t.hp <= 0) { destroy(t, s.from); break; }
       }
     }
     shots = shots.filter((s) => !s.dead);

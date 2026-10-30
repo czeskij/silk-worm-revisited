@@ -463,6 +463,128 @@ SW.enemies = (function () {
     });
   }
 
+  // ---------------------------------------------------------------- level 11 (and a few elsewhere)
+
+  // Firing hook used with sub_6C7E2: first shot after `first` frames, then every 256.
+  function fireHook(first) {
+    let t = first;
+    return (e) => { t = (t - 1) & 255; if (t === 0) aimedShot(e.x, e.y); };
+  }
+
+  // $6DF28 (groups $6DF1C x3 / $6DF18 x2, 127 frames apart): armoured car
+  // (130/132, wreck 134) on the ground, rolling at +0.5 against the scroll.
+  function car() {
+    const e = obj({ x: 0x168, y: 0x8e, ground: true, vx: 0.5, score: 2, wreck: 134 });
+    setAnim(e, [130, 132]);
+    return spawn(e, drift);
+  }
+
+  // $6E130 / $6E152: swirling plane (290/291). From the top at a random x,
+  // dives at angle 48-79 for 85 frames, then loops turning +-8, reversing at
+  // random (1 in 8) while above y 100; the $6E130 kind fires.
+  function swirler(fires) {
+    const e = obj({ x: 0x20 + W.rand(256), y: 0x10, score: 1 });
+    setAnim(e, [290, 291]);
+    const hook = fires ? fireHook(W.rand(64)) : null;
+    return spawn(e, function* (e) {
+      let angle = 0x30 + W.rand(32);
+      velocity(e, angle, 1.25);
+      for (let i = 0; i < 0x55; i++) { physics(e); if (hook) hook(e); yield; }
+      let turn = W.rand(2) ? 8 : -8;
+      for (let i = 0; i < 100 && !offscreen(e); i++) {
+        if (W.rand(8) === 0 && e.y <= 0x64) turn = -turn;
+        angle = (angle + turn) & 255;
+        velocity(e, angle, 1.25);
+        for (let f = 0; f < 4; f++) { physics(e); if (hook) hook(e); yield; }
+      }
+      while (!offscreen(e)) { physics(e); yield; }
+    });
+  }
+
+  // $6DE6E (groups $6DE5A x2 / $6DE5E x4, 40 frames apart): descender (104/105).
+  // Sinks from the top, slows, then climbs away, firing (first after 100 frames).
+  function descender() {
+    const e = obj({ x: 0x94 + W.rand(64), y: 0, vx: -0x3000 / 65536, vy: 0x3000 / 65536, score: 2 });
+    setAnim(e, [104, 105]);
+    const hook = fireHook(100);
+    return spawn(e, function* (e) {
+      const phase = function* (n) { for (let i = 0; i < n; i++) { physics(e); hook(e); yield; } };
+      yield* phase(0xc8 + W.rand(64));
+      e.vy = 0x1000 / 65536;
+      yield* phase(0xc8 + W.rand(64));
+      e.vy = -0x3000 / 65536;
+      yield* phase(0x190);
+    });
+  }
+
+  // $6D2B8 (groups $6D2AC x4 / $6D2A8 x3, 20 frames apart): hovering gunship
+  // (118/119): flies in, stops, fires at each player 4-7 times 50 frames apart, leaves.
+  function hoverer() {
+    const e = obj({ x: 0x14a, y: 0x32 + W.rand(64), vx: -1, score: 3 });
+    setAnim(e, [118, 119]);
+    return spawn(e, function* (e) {
+      yield* move(e, 8 + W.rand(32));
+      e.vx = 0;
+      for (let n = 4 + W.rand(4); n > 0; n--) {
+        yield* move(e, 0x32);
+        aimedAtEach(e.x, e.y);
+      }
+      e.vx = -1;
+      yield* drift(e);
+    });
+  }
+
+  // $6DDAC (spawners $6DDA6 x4 / $6DDA2 x3): a column of sinkers (110/112),
+  // 8 frames apart, each 18 px lower, from y 40.
+  function column(count) {
+    let y = 0x28;
+    return group(count, 8, () => {
+      const e = obj({ x: 0x166, y, vx: -0x2000 / 65536, vy: 0.5, score: 2 });
+      setAnim(e, [110, 112]);
+      spawn(e, drift);
+      y += 0x12;
+    });
+  }
+
+  // $6ED3E (group $6FCFA x4, 20 frames apart): low bomber (116/117) at y 134,
+  // -2 px/frame, dropping a shot down-left every 10 frames.
+  function bomber() {
+    const e = obj({ x: 0x14f, y: 0x86, vx: -2, score: 2 });
+    setAnim(e, [116, 117]);
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) {
+        yield* move(e, 10);
+        const s = obj({ kind: "shot", x: e.x - 8, y: e.y, hw: 3, hh: 3, shootable: false });
+        velocity(s, 0x70, 3);
+        straight(s);
+      }
+    });
+  }
+
+  // $6ECE6 (groups $6FCEE x4 / $6ECDA x3): dasher (114/115) at y 40: cruises
+  // at -1 for 100 frames, then dashes at -5 (116/117) firing every 5 frames.
+  function dasher() {
+    const e = obj({ x: 0x14f, y: 0x28, vx: -1, score: 3 });
+    setAnim(e, [114, 115]);
+    return spawn(e, function* (e) {
+      yield* move(e, 100);
+      e.vx = -5;
+      setAnim(e, [116, 117]);
+      while (!offscreen(e)) { yield* move(e, 5); aimedShot(e.x, e.y); }
+    });
+  }
+
+  // $708A2: one frame of "everything touched a vehicle" (-$67A0), so every
+  // enemy on screen is destroyed, then the screen flashes 7 times.
+  function clearScreen() {
+    const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
+    return spawn(ctrl, function* () {
+      yield;
+      W.destroyAll();
+      for (let k = 0; k < 7; k++) { W.flash = 21; yield* wait(42); }
+    });
+  }
+
   // $6F5FE (and from mines): power-up. Drifts up-left with the ground.
   // Touch it to collect; 18 shots destroy it (sprite changes with 3 to go).
   function powerUp(x, y) {
@@ -540,7 +662,8 @@ SW.enemies = (function () {
     W.stopScroll = 1;
     const e = bossObj({ x: 0x170, y: 0x76, vx: -2 / 3, hp: W.level * 8 + 40, onDeath: bossDies });
     setAnim(e, [209, 229]);
-    const rear = obj({ kind: "part", hw: 32, hh: 16, shootable: false });   // $6DC42
+    // $6DC42, linked to the boss; hits on it count against the boss (assumed from the link)
+    const rear = obj({ kind: "part", hw: 32, hh: 16, shootable: false, forward: e });
     setAnim(rear, [218, 238]);
     spawn(rear, function* (r) {
       while (e.alive && e.kind === "boss") {
@@ -551,7 +674,7 @@ SW.enemies = (function () {
     });
     return spawn(e, function* (e) {
       yield* move(e, 0x6e);
-      e.shootable = true; e.vx = 0;
+      e.shootable = true; rear.shootable = true; e.vx = 0;
       for (let round = 0; round < 14; round++) {
         const ox = e.x + 8, oy = e.y + 8;
         if (chance()) aimedAtEach(ox, oy);
@@ -658,6 +781,25 @@ SW.enemies = (function () {
     "6E3F4": () => group(3, 50, () => droneAt(randomHeight().y)),
     "6E400": () => droneAt(randomHeight().y),
     "6E03A": () => silo(),
+    "6D40A": () => group(3, 0x26, aaGun),
+    "6DE56": () => {},                                       // jumps straight to "end task"
+    "6DCF6": () => bomb(0x14a, 0x76),
+    "6DF1C": () => group(3, 0x7f, car), "6DF18": () => group(2, 0x7f, car),
+    "6E02A": () => group(4, 0x14, () => floater()),
+    "6E10C": () => group(4, 0x14, () => swirler(true)), "6E152": () => swirler(false),
+    "6DE5A": () => group(2, 0x28, descender), "6DE5E": () => group(4, 0x28, descender),
+    "6D2AC": () => group(4, 0x14, hoverer), "6D2A8": () => group(3, 0x14, hoverer),
+    "6DDA6": () => column(4), "6DDA2": () => column(3),
+    "6FCFA": () => group(4, 0x14, bomber), "6ED3E": () => bomber(),
+    "6FCEE": () => group(4, 0x14, dasher), "6ECDA": () => group(3, 0x28, dasher),
+    "708A2": () => clearScreen(),
+    // other group sizes / single instances of the same families
+    "6E104": () => group(10, 0x14, () => swirler(true)), "6E108": () => group(6, 0x14, () => swirler(true)),
+    "6E118": () => group(14, 0x14, () => swirler(false)), "6E11C": () => group(10, 0x14, () => swirler(false)),
+    "6E120": () => group(6, 0x14, () => swirler(false)), "6E124": () => group(4, 0x14, () => swirler(false)),
+    "6D2A4": () => group(2, 0x14, hoverer), "6D2B8": () => hoverer(),
+    "6ED7C": () => seekers(2), "6ED80": () => seekers(3),
+    "6ECE6": () => dasher(), "6DF28": () => car(),
   };
   // stubs: group size and spacing as in each `moveq #n,d0 / moveq #m,d1`
   const JETS = { "6E456": [20, 10], "6E45C": [16, 16], "6E462": [9, 20], "6E468": [6, 18], "6E46E": [4, 20],
@@ -675,7 +817,7 @@ SW.enemies = (function () {
   for (const k of BLIMPS) FAMILY[k] = () => group((HINTS[k] && HINTS[k].count) || 1, 0x1c, blimp);
   const HELI_NO_FIRE = new Set(["6E556", "6E55A", "6E55E", "6E562", "6E566", "6E56A", "6E56E"]);
   const HELI_FIRE = new Set(["6E53A", "6E53E", "6E542", "6E546", "6E54A"]);
-  const WALKER = new Set(["6FD0E", "6FD08", "6FD0C", "6FD10"]);
+  const WALKER = new Set(["6FD0E", "6FD06", "6FD08", "6FD0A", "6FD0C", "6FD10"]);
   const SKIP = new Set();
 
   // Which waves use decoded behaviour (for the notes / debugging)
