@@ -67,7 +67,8 @@ SW.game = (function () {
     scenery = { ptr: lv.sceneryPtr, delay: 0, objs: [] };
     shots = []; enemies = []; booms = [];
     Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0,
-                           stopScroll: 0, gameWon: false,
+                           stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false,
+                           groundOverride: new Map(),   // ground column index -> column number
                            boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }) });
     E.attach(world);
     for (const pl of players) { pl.x = pl.startX; pl.y = pl.startY; pl.vy = 0; pl.inv = 100; }
@@ -241,6 +242,7 @@ SW.game = (function () {
       scroll++; clock++;
       if (scroll % 32 === 0) stepScenery();
     }
+    world.scrollPos = scroll;
     while (waveIdx < waves.length && waves[waveIdx].t <= clock) E.wave(waves[waveIdx++].addr);
 
     players.forEach((p, i) => {
@@ -346,6 +348,14 @@ SW.game = (function () {
       ctx.fillStyle = "#ff8030"; ctx.fillRect(Math.round(x - Math.cos(a) * 5) - 1, Math.round(y - Math.sin(a) * 5) - 1, 2, 2);
       return;
     }
+    if (e.kind === "silomissile") {   // hardware sprite $230 (pointing up), only above the road
+      const x = Math.round(e.x), top = Math.round(e.y) - 15 - 12;
+      if (top > 150) return;
+      const h = Math.min(24, 152 - top);
+      ctx.fillStyle = "#d0d0d8"; ctx.fillRect(x - 2, top, 4, h);
+      ctx.fillStyle = "#ff5030"; ctx.fillRect(x - 2, top, 4, 3);
+      return;
+    }
     if (e.turret) drawSprite(e.turret, e.x, 0x82);
     if (e.spr >= 0 && e.spr < 400) drawSprite(e.spr, e.x, e.y);
   }
@@ -359,8 +369,10 @@ SW.game = (function () {
     const back = scroll >> 1, cols = SW.gfx.backCols;
     for (let i = back >> 4; i <= (back >> 4) + 21; i++)
       ctx.drawImage(cols[lv.backStream[i % lv.backStream.length] % 20], i * 16 - back, 0);
-    for (let i = scroll >> 4; i <= (scroll >> 4) + 21; i++)
-      ctx.drawImage(SW.gfx.ground(lv.groundStream[i % lv.groundStream.length]), i * 16 - scroll, 144);
+    for (let i = scroll >> 4; i <= (scroll >> 4) + 21; i++) {
+      const col = world.groundOverride.has(i) ? world.groundOverride.get(i) : lv.groundStream[i % lv.groundStream.length];
+      ctx.drawImage(SW.gfx.ground(col), i * 16 - scroll, 144);
+    }
 
     scenery.objs = scenery.objs.filter((o) => o.wx - scroll > -64);
     for (const o of scenery.objs) drawSprite(o.spr, o.wx - scroll, 0x90);

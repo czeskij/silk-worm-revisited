@@ -101,7 +101,8 @@ SW.enemies = (function () {
     if (o.ax !== undefined) e.ax = o.ax;
     if (o.ay !== undefined) e.ay = o.ay;
     return spawn(e, function* (e) {
-      for (let i = 0; i < launch && e.y < 0x9e; i++) { physics(e); yield; }
+      for (let i = 0; i < launch && e.y < 0x9e; i++) { if (offscreen(e)) return; physics(e); yield; }
+      if (o.fixed) return;                      // loc_7078C: keeps its direction
       const t = target();
       e.ax = e.ay = 0;
       e.angle = angleTo(e.x, e.y, t.x, t.y);
@@ -279,6 +280,185 @@ SW.enemies = (function () {
           e.vx = d1 > d0 ? 1.5 : -1.5;
           physics(e); yield;
         }
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- more families
+
+  // Spawner like loc_6FADA: `count` children, `gap` frames apart.
+  function group(count, gap, make) {
+    const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
+    return spawn(ctrl, function* () {
+      for (let i = 0; i < count; i++) { make(i); yield* wait(gap); }
+    });
+  }
+  function straight(e) {
+    return spawn(e, function* (e) { while (!offscreen(e) && e.y < 0x9e) { physics(e); yield; } });
+  }
+
+  // $6EA48 / $6EA40: floating pod (106-109): every 100 frames a ring of 8 shots.
+  function floater(y) {
+    const e = obj({ x: 0x14f, y: y == null ? 0x20 + W.rand(64) : y, vx: -0.75, score: 6 });
+    setAnim(e, [106, 107, 108, 109]);
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) {
+        yield* move(e, 100);
+        if (offscreen(e)) return;
+        for (let a = 0x100; a > 0; a -= 0x20) {                 // $6FB2E, 3 px/frame
+          const s = obj({ kind: "shot", x: e.x - 8, y: e.y, hw: 3, hh: 3, shootable: false });
+          velocity(s, a & 255, 3);
+          straight(s);
+        }
+      }
+    });
+  }
+
+  // $6D816 / $6D81E / $6D82C / $6D834: ground turret (160, wreck 161):
+  // 3 volleys of up-left / left / down-left shots, `gap` frames apart, then rests 50.
+  function turret(y, gap) {
+    const e = obj({ x: 0x14f, y, ground: true, score: 3, wreck: 161 });
+    setAnim(e, [160]);
+    return spawn(e, function* (e) {
+      while (true) {
+        for (let k = 0; k < 3; k++) {
+          yield* move(e, gap);
+          if (offscreen(e)) return;
+          missile(e.x - 8, e.y - 5, 0xa0, 999, 0, 0, { fixed: true });   // $70766
+          missile(e.x - 12, e.y + 3, 0x80, 999, 0, 0, { fixed: true });  // $70774
+          missile(e.x - 8, e.y + 11, 0x60, 999, 0, 0, { fixed: true });  // $70780
+        }
+        yield* move(e, 50);
+        if (offscreen(e)) return;
+      }
+    });
+  }
+
+  // $6E400 (groups $6E3F0 / $6E3F4): drone that can't be shot, accelerates left.
+  function droneAt(y) {
+    const e = obj({ x: 0x14f, y, ax: -0x3000 / 65536, shootable: false });
+    setAnim(e, [98, 99]);
+    return spawn(e, drift);
+  }
+
+  // $6E488 (groups $6E456-$6E47C): jet (85) accelerating left with a random climb/dive.
+  function jet() {
+    const v = (W.rand(65536) - 32768) / 65536;
+    const e = obj({ x: 0x160, y: 0x30 + W.rand(64), vy: v, ax: -0x2000 / 65536, score: 1 });
+    e.spr = 0x55;
+    return spawn(e, drift);
+  }
+
+  // $6E8AE / $6E8D0: dive plane. Starts at the top, turns 2 units every 2 frames
+  // for 128 frames (a half loop down and back), then leaves at 2 px/frame.
+  function diver(fires) {
+    const p = target("heli");
+    const right = p.x > 0xa0;
+    const e = obj({ x: right ? 0x80 : 0xc0, y: 0x0a, score: 1 });
+    setAnim(e, right ? [297, 298] : [294, 295]);
+    let angle = right ? 0x80 : 0, turn = right ? -2 : 2;
+    let timer = fires ? W.rand(64) : -1;
+    return spawn(e, function* (e) {
+      const step = () => {
+        physics(e);
+        if (timer >= 0 && (timer = (timer - 1) & 255) === 0) aimedShot(e.x, e.y);
+      };
+      velocity(e, angle, 0x1a0 / 256);
+      for (let k = 0; k < 64; k++) {
+        angle = (angle + turn) & 255;
+        velocity(e, angle, 0x1a0 / 256);
+        step(); yield; step(); yield;
+      }
+      velocity(e, angle, 2);
+      while (!offscreen(e)) { step(); yield; }
+    });
+  }
+
+  // $6E99C (groups $6E96C-$6E990): bouncing ball (100/101, squash 102/103).
+  // From level 5 each bounce may fire an aimed shot (about 1 in 11).
+  function bouncer() {
+    const e = obj({ x: 0x14f, y: 0x50, vx: -1.5, ay: 0x2000 / 65536, score: 1 });
+    setAnim(e, [100, 101]);
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) {
+        physics(e);
+        if (e.y > 0x98) {
+          if (W.level >= 5 && W.rand(65536) <= 0x1800) aimedShot(e.x, e.y - 16);
+          e.vy = -e.vy; e.y += e.vy;
+          setAnim(e, [102, 103]);
+          e.squash = 20;                                        // 5 x (102, 103), then back
+        }
+        if (e.squash > 0 && --e.squash === 0) setAnim(e, [100, 101]);
+        yield;
+      }
+    });
+  }
+
+  // $6ED8E: spawner at x $145 releasing seekers, heights stepping by 16.
+  // $6EDC6 seeker (288/289): starts at 3.1 px/frame, slows to 0.8, turns
+  // up to 16 units a frame toward its target until it has passed it.
+  function seekers(count) {
+    let y = 0x38;
+    return group(count, 32, () => {
+      seeker(0x145, y);
+      y += 16; if (y > 0x78) y -= 0x64;
+    });
+  }
+  function seeker(x, y) {
+    const e = obj({ x, y, score: 4 });
+    setAnim(e, [288, 289]);
+    const t = target();
+    let speed = 0x320, angle = 0x80;
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) {
+        if (speed > 0xc8) speed -= 6;
+        if (t.x < e.x) {
+          let d = ((angleTo(e.x, e.y, t.x, t.y) - angle + 128) & 255) - 128;
+          angle = (angle + Math.max(-16, Math.min(16, d))) & 255;
+        }
+        velocity(e, angle, speed / 256);
+        physics(e); yield;
+      }
+    });
+  }
+
+  // $6EACE (groups $6EABE / $6EAC2): blimp (83/84), drifts left at 0.25 and
+  // zig-zags vertically between y 64 and 134.
+  function blimp() {
+    const e = obj({ x: 0x14f, y: 0x20 + W.rand(64), vx: -0.25, score: 8 });
+    setAnim(e, [83, 84], 4);
+    e.vy = W.rand(2) ? 0.5 : -0.5;
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) {
+        if (e.y > 0x86) e.vy = -0.5;
+        if (e.y < 0x40) e.vy = 0.5;
+        physics(e); yield;
+      }
+    });
+  }
+
+  // $6E03A: missile silo. Waits for a ground column boundary, puts the silo
+  // columns $5A/$5B into the road, then every 90 frames a missile ($6E07C)
+  // rises out of it: from y 204 at -0.75 for 50 frames, then -2 for 77.
+  function silo() {
+    const anchor = obj({ kind: "controller", x: 0x14a, y: 0xa8, ground: true, shootable: false, touchKills: false });
+    return spawn(anchor, function* (a) {
+      while (W.siloBusy || W.scrollPos % 16 !== 1) { if (W.scrollDelta) a.x -= 1; yield; }
+      W.siloBusy = true;
+      const col = Math.floor((W.scrollPos + a.x + 0x56 - 16) / 16);
+      W.groundOverride.set(col, 0x5a);
+      W.groundOverride.set(col + 1, 0x5b);
+      a.x = col * 16 + 16 - W.scrollPos - 0x56;
+      W.siloBusy = false;
+      while (a.x + 0x56 > -16) {
+        yield* move(a, 0x5a);
+        const m = obj({ kind: "silomissile", x: a.x + 0x56, y: 0xcc, ground: true, vy: -0xc000 / 65536,
+                        hw: 4, hh: 12, score: 1 });
+        spawn(m, function* (m) {
+          yield* move(m, 0x32);
+          m.vy = -2;
+          yield* move(m, 0x4d);
+        });
       }
     });
   }
@@ -471,11 +651,32 @@ SW.enemies = (function () {
     "6F5FE": () => powerUp(),
     "6F736": () => flash(),
     "705D0": () => bossA(), "6DB1E": () => bossB(), "70512": () => bossFinal(),
+    "6EA48": () => floater(), "6EA40": () => floater(0x78),
+    "6D816": () => turret(0x8e, 0x0a), "6D81E": () => turret(0x7e, 0x0a),
+    "6D82C": () => turret(0x8e, 0x32), "6D834": () => turret(0x7e, 0x32),
+    "6E3F0": () => group(2, 50, () => droneAt(randomHeight().y)),
+    "6E3F4": () => group(3, 50, () => droneAt(randomHeight().y)),
+    "6E400": () => droneAt(randomHeight().y),
+    "6E03A": () => silo(),
   };
+  // stubs: group size and spacing as in each `moveq #n,d0 / moveq #m,d1`
+  const JETS = { "6E456": [20, 10], "6E45C": [16, 16], "6E462": [9, 20], "6E468": [6, 18], "6E46E": [4, 20],
+                 "6E474": [26, 50], "6E478": [14, 50], "6E47C": [4, 50] };
+  const DIVERS = { "6E886": [6, true], "6E88A": [9, true], "6E896": [4, false], "6E89A": [8, false],
+                   "6E89E": [12, false], "6E8A2": [15, false] };
+  const BOUNCERS = { "6E96C": [16, 6], "6E972": [12, 10], "6E978": [9, 18], "6E97E": [8, 19],
+                     "6E984": [6, 15], "6E98A": [4, 20], "6E990": [3, 20] };
+  const SEEKERS = { "6ED84": 4, "6ED88": 6, "6ED8C": 15 };
+  const BLIMPS = new Set(["6EABE", "6EAC2", "6EAC4"]);
+  for (const [k, [n, gap]] of Object.entries(JETS)) FAMILY[k] = () => group(n, gap, jet);
+  for (const [k, [n, fires]] of Object.entries(DIVERS)) FAMILY[k] = () => group(n, 0x14, () => diver(fires));
+  for (const [k, [n, gap]] of Object.entries(BOUNCERS)) FAMILY[k] = () => group(n, gap, bouncer);
+  for (const [k, n] of Object.entries(SEEKERS)) FAMILY[k] = () => seekers(n);
+  for (const k of BLIMPS) FAMILY[k] = () => group((HINTS[k] && HINTS[k].count) || 1, 0x1c, blimp);
   const HELI_NO_FIRE = new Set(["6E556", "6E55A", "6E55E", "6E562", "6E566", "6E56A", "6E56E"]);
   const HELI_FIRE = new Set(["6E53A", "6E53E", "6E542", "6E546", "6E54A"]);
   const WALKER = new Set(["6FD0E", "6FD08", "6FD0C", "6FD10"]);
-  const SKIP = new Set(["6E03A"]);   // gun emplacement in the ground layer: not drawn yet
+  const SKIP = new Set();
 
   // Which waves use decoded behaviour (for the notes / debugging)
   function decoded(addr) {

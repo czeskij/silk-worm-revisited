@@ -238,14 +238,29 @@ while it's around (`sub_6FACC`).
 | `6F5FE` | power-up (34/35, then 36/37) | drifts up-left with the ground; 18 hits to destroy; touching it gives the player item (player field `$6`) |
 | `6F736` | palette flash | colour `$448` pulsed 3 times |
 
+More families (together with the above and the bosses: **84 % of all waves**):
+
+| Routine | Enemy | Behaviour |
+|---|---|---|
+| `6E03A` | missile silo | waits for a ground column boundary, inserts ground columns `$5A`/`$5B` (a launch tube) via `-$7FDC`, then every 90 frames a missile (`$6E07C`, hardware sprite `$230`, shootable) rises from y 204: −0.75 for 50 frames, then −2 for 77 |
+| `6EA48` / `6EA40` | floating pod (106–109) | random y 32–95 (or `$78`), −0.75 px/frame; every 100 frames a ring of 8 shots (`$6FB2E`, angles `$100`…`$20`, 3 px/frame) |
+| `6D816` `6D81E` `6D82C` `6D834` | ground turret (160, wreck 161) | y `$8E`/`$7E`; 3 volleys 10 or 50 frames apart, each up-left / left / down-left (`$70766`/`$70774`/`$70780`, fixed direction), then 50 frames rest |
+| `6E400` (`6E3F0` ×2, `6E3F4` ×3, 50 frames apart) | drone (98/99) | random height, accelerates left (−`$3000`), can't be shot |
+| `6E488` (`6E456`–`6E47C`: 4–26 jets, 10–50 frames apart) | jet (85) | from x 352, y 48–111, random vertical speed ±0.5, accelerates left (−`$2000`) |
+| `6E8AE` (`6E886` ×6, `6E88A` ×9, firing) / `6E8D0` (`6E896`–`6E8A2` ×4–15) | dive plane (294/295 or 297/298) | from (128 or 192, 10), speed 1.625, turns ±2 every 2 frames for 128 frames (a half loop), then 2 px/frame; firing ones shoot like the helicopters |
+| `6E99C` (`6E96C`–`6E990`: 3–16, 6–20 frames apart) | bouncing helicopter (100/101, squash 102/103) | from (335, 80), −1.5 px/frame, gravity 0.125, bounces off y `$98`; from level 5 each bounce may fire (random ≤ `$1800`) |
+| `6ED8E` (`6ED84` ×4, `6ED88` ×6, `6ED8C` ×15, 32 frames apart) | seeker (288/289) | released at x `$145`, heights stepping 16 (wrapping 56–120); speed 3.1 slowing to 0.8, turns ≤ 16 a frame toward its target until past it |
+| `6EACE` (`6EABE` / `6EAC2`, 28 frames apart) | blimp (83/84) | random y 32–95, −0.25 px/frame, zig-zags ±0.5 between y 64 and 134, score 8 |
+
+Still generic: about 100 waves from ~60 small families (level 11 has the most).
+
 **Projectiles**: `loc_707C0` missiles/shells: 2.5 px/frame, hitbox ±8, fly
 `d0` frames as fired (shell: straight up with extra upward acceleration), then
 re-aim `d1` times every 5 frames turning ≤ 12 units; sprite `$210 + angle/8`
 (hardware sprite). `$6FB6C` aimed shot: 3 px/frame, can't be shot.
 
-Not decoded yet: the other 72 families (41 % of waves, mostly levels 4, 5, 6
-and 11), the gun emplacement built into the ground layer (`$6E03A`), the bonus
-carrier and the exact power-up effects.
+Not decoded yet: the small families listed below as generic, the bonus carrier
+and the exact power-up effects.
 
 ### Bosses
 
