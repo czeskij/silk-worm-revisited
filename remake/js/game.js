@@ -91,11 +91,14 @@ SW.game = (function () {
              lives: 3, score: 0, fireDelay: 0, rate: 10, angle: 1, angleDelay: 0, dead: 0, inv: 0, power: 0 };
   }
 
-  function fire(x, y, angle, from) {
-    // from the disassembly: speed $E00 = 14 px/frame, angle in 256 steps
+  // from the disassembly: speed $E00 = 14 px/frame, angle in 256 steps;
+  // `spr` = hardware sprite $200 + spr
+  function fire(x, y, angle, from, spr) {
     const s = 14 / 256;
-    shots.push({ x, y, vx: sin[(angle + 64) & 255] * s, vy: sin[angle & 255] * s, from });
+    shots.push({ x, y, vx: sin[(angle + 64) & 255] * s, vy: sin[angle & 255] * s, from, spr });
   }
+  const HELI_SHOT = 0x42, DIAGONAL_SHOT = 0x02;                // $242 ($6F45E), $202 ($6F3C2/$6F3DC)
+  const jeepShot = (gun) => ((0x10000 - gun) >> 1) & 15;       // $6F428: $200 + (-gun >> 1 & 15)
 
   function updateHeli(p, input) {
     // from the disassembly ($6F148): 8 directions at 2x the table, bounds 30..300 / 24..122
@@ -111,9 +114,9 @@ SW.game = (function () {
     if (input & I.FIRE) {
       if (--p.fireDelay < 0) {
         p.fireDelay = p.rate;
-        fire(p.x + 8, p.y + 2, 0, p);
-        if (p.power) fire(p.x + 8, p.y - 4, 0, p);           // power-up: second shot ($6F44A)
-        fire(p.x + 3, p.y - 1, 32, p);
+        fire(p.x + 8, p.y + 2, 0, p, HELI_SHOT);
+        if (p.power) fire(p.x + 8, p.y - 4, 0, p, HELI_SHOT); // power-up: second shot ($6F44A)
+        fire(p.x + 3, p.y - 1, 32, p, DIAGONAL_SHOT);
       }
     } else p.fireDelay = 0;
   }
@@ -141,9 +144,9 @@ SW.game = (function () {
     if (input & I.FIRE) {
       if (--p.fireDelay < 0) {
         p.fireDelay = p.rate;
-        fire(p.x - 8, p.y - 5, -p.angle * 8, p);
-        if (p.power) fire(p.x - 8, p.y - 5, -(p.angle - 1) * 8, p);   // power-up ($6F3F6)
-        if (p.y < 0x96) fire(p.x + 3, p.y - 1, 32, p);    // extra shot while airborne
+        fire(p.x - 8, p.y - 5, -p.angle * 8, p, jeepShot(p.angle));
+        if (p.power) fire(p.x - 8, p.y - 5, -(p.angle - 1) * 8, p, jeepShot((p.angle - 1) & 31)); // $6F3F6
+        if (p.y < 0x96) fire(p.x + 3, p.y - 1, 32, p, DIAGONAL_SHOT);   // extra shot while airborne
       }
     } else p.fireDelay = 0;
   }
@@ -341,27 +344,30 @@ SW.game = (function () {
     ctx.fillStyle = colour || "#fff"; ctx.fillText(str, x, y);
   }
 
+  // Hardware sprites ($2xx): 16x16, drawn centred on the object.
+  function drawHw(n, x, y) {
+    const cv = SW.gfx.hw(n);
+    if (cv) ctx.drawImage(cv, Math.round(x) - 8, Math.round(y) - 15 - 8);
+  }
+
   function drawEnemy(e) {
     if (e.kind === "controller" || e.hidden) return;
     if (e.blink > 0) { e.blink--; if (frame & 1) return; }
-    if (e.kind === "shot") {
-      ctx.fillStyle = "#ff5040";
-      ctx.fillRect(Math.round(e.x) - 1, Math.round(e.y) - 16, 3, 3);
+    const h = e.heading || 0;
+    if (e.kind === "shot") {                           // $232 + (angle + 8) / 16 ($6FBA2)
+      drawHw(0x32 + (((h + 8) >> 4) & 15), e.x, e.y);
       return;
     }
-    if (e.kind === "missile") {   // hardware sprite $210+: drawn as a line along its heading
-      const a = (e.angle || 0) * Math.PI / 128, x = e.x, y = e.y - 15;
-      ctx.strokeStyle = "#ffd0a0"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x - Math.cos(a) * 4, y - Math.sin(a) * 4); ctx.lineTo(x + Math.cos(a) * 4, y + Math.sin(a) * 4); ctx.stroke();
-      ctx.fillStyle = "#ff8030"; ctx.fillRect(Math.round(x - Math.cos(a) * 5) - 1, Math.round(y - Math.sin(a) * 5) - 1, 2, 2);
+    if (e.kind === "missile") {                        // $210 + (angle + 4) / 8 (sub_7088C)
+      drawHw(0x10 + (((h + 4) >> 3) & 31), e.x, e.y);
       return;
     }
-    if (e.kind === "silomissile") {   // hardware sprite $230 (pointing up), only above the road
-      const x = Math.round(e.x), top = Math.round(e.y) - 15 - 12;
-      if (top > 150) return;
-      const h = Math.min(24, 152 - top);
-      ctx.fillStyle = "#d0d0d8"; ctx.fillRect(x - 2, top, 4, h);
-      ctx.fillStyle = "#ff5030"; ctx.fillRect(x - 2, top, 4, 3);
+    if (e.kind === "silomissile") {                    // $230 + the linked lower half $231, above the road only
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, 152); ctx.clip();
+      drawHw(0x30, e.x, e.y);
+      drawHw(0x31, e.x, e.y + 16);
+      ctx.restore();
       return;
     }
     if (e.turret) drawSprite(e.turret, e.x, 0x82);
@@ -392,8 +398,7 @@ SW.game = (function () {
     }
     for (const e of enemies) if (!e.ground || e.kind === "missile") drawEnemy(e);
 
-    ctx.fillStyle = "#ffe066";
-    for (const s of shots) ctx.fillRect(Math.round(s.x) - 2, Math.round(s.y) - 16, 4, 2);
+    for (const s of shots) drawHw(s.spr, s.x, s.y);
     for (const bm of booms) if (bm.f >= 0) drawSprite(E.EXPLOSION[Math.min(4, bm.f >> 3)], bm.x, bm.y);
     if (world.flash > 0) { ctx.fillStyle = `rgba(255,255,220,${world.flash / 40})`; ctx.fillRect(0, 0, W, 168); }
 

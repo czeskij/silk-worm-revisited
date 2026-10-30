@@ -15,6 +15,7 @@ Source disk: `Data/Floppies/Silkworm.adf` (Defjam/CCS/Spreadpoint crack, 1989).
 | `maps/` | Full map of every level: backdrop, ground, scenery and enemy entry points |
 | `sprites.png` | All 400 sprite/bob objects in level 1's palette |
 | `sprites_by_level/` | The same sheet in each level's palette (scenery colours change) |
+| `hwsprites.png` | The 69 hardware sprites: shots and missiles in every direction |
 | `tools/` | The Python scripts that produced all of the above |
 
 Re-run everything (needs `pip install capstone` for the disassemblers):
@@ -23,6 +24,7 @@ Re-run everything (needs `pip install capstone` for the disassemblers):
 python3 tools/extract.py ../Data/Floppies/Silkworm.adf .
 python3 tools/trace68k.py chipmem.bin game_traced.asm 0x68488 0x6af38 --range 0x3FFE0 0x7F3E0
 python3 tools/sprites.py chipmem.bin sprites.png 0x67772      # level 1 palette
+python3 tools/hwsprites.py chipmem.bin hwsprites.png
 python3 tools/levels.py ../Data/Floppies/Silkworm.adf chipmem.bin levels
 python3 tools/waves.py chipmem.bin waves
 python3 tools/maps.py ../Data/Floppies/Silkworm.adf chipmem.bin maps
@@ -123,6 +125,20 @@ Two tasks start with each level, before the wave scheduler (`$6EECC`):
     explosions; 10–15 are per-level scenery; 16–31 are hardware-sprite colours.
   - Menu/text palettes: `$676D2`, `$676F2`, `$67712`.
 - `sprites.png` uses level 1's palette; `sprites_by_level/` has one sheet per level.
+- **Hardware sprites** (`hwsprites.png`): sprite numbers with bit 9 set (`$2xx`)
+  take the `bclr #9` path in `sub_712AA` (`loc_714AA`): data at
+  `$61132 + n×64`, 16 lines of two words (Amiga sprite format, 2 bitplanes),
+  69 of them up to the ground bank at `$62272`, coloured with palette entries
+  17–19 (red / grey / white in every level). Queued in a list sorted by y
+  (`-$7D20`, at most 24 per frame), positioned at (x + `$78`, y + `$44`).
+
+  | Sprites | Use | Picked by |
+  |---|---|---|
+  | `$200`–`$20F` | player shot, 16 directions | jeep: `$200 + (−gun >> 1 & 15)` (`$6F428`); `$202` = the 45° extra shot |
+  | `$210`–`$22F` | missile, 32 directions | `$210 + (angle + 4) / 8` (`sub_7088C`) |
+  | `$230` / `$231` | silo missile, top / bottom half | `$6E07C` and its linked part `$6E0F6` |
+  | `$232`–`$241` | enemy shot, 16 directions | `$232 + (angle + 8) / 16` (`$6FBA2`) |
+  | `$242`–`$244` | helicopter shot (`$6F45E`) and two long variants | |
 
 ### Levels
 

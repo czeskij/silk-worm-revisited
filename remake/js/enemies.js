@@ -62,6 +62,7 @@ SW.enemies = (function () {
 
   const S = () => W.sin;
   function velocity(e, angle, speed) {   // sub_6C8BC: speed in px/frame
+    e.heading = angle & 255;
     e.vx = S()[(angle + 64) & 255] * speed / 256;
     e.vy = S()[angle & 255] * speed / 256;
   }

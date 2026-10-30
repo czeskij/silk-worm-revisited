@@ -7,7 +7,8 @@ SW.gfx = (function () {
   const PALETTES = 0x67732, LEVEL_TRACKS = 0x6B924, LEVEL_PTRS = 0x69E3C;
   const GROUND_BANK = 0x62272;
 
-  let mem, adf, level, palette, spriteCache, backCols, groundCache;
+  const HW_BANK = 0x61132, HW_COUNT = 69;   // hardware sprites $200-$244 (loc_714AA)
+  let mem, adf, level, palette, spriteCache, backCols, groundCache, hwPalette, hwCache;
   const spriteData = [];   // decoded colour indices, palette-independent
 
   function init(adfBytes, memory) {
@@ -65,6 +66,10 @@ SW.gfx = (function () {
     for (let i = 0; i < 16; i++) palette.push(amigaColour(be16(mem, PALETTES + n * 64 + i * 2)));
     spriteCache = new Map();
     groundCache = new Map();
+    // hardware sprites use colours 16-19 of the level palette (same in every level)
+    hwPalette = [];
+    for (let i = 16; i < 20; i++) hwPalette.push(amigaColour(be16(mem, PALETTES + n * 64 + i * 2)));
+    hwCache = new Map();
 
     // backdrop: 20 columns of 9 cells (16x16, 4 bitplanes interleaved per row)
     const block = tracks(adf, be16(mem, LEVEL_TRACKS + n * 2), 4);
@@ -118,11 +123,34 @@ SW.gfx = (function () {
     return s;
   }
 
+  // Hardware sprite n ($200 + n): 16 lines of two words, 2 bitplanes.
+  function hw(n) {
+    if (n < 0 || n >= HW_COUNT) return null;
+    let cv = hwCache.get(n);
+    if (!cv) {
+      cv = document.createElement("canvas");
+      cv.width = 16; cv.height = 16;
+      const ctx = cv.getContext("2d"), img = ctx.createImageData(16, 16);
+      for (let y = 0; y < 16; y++) {
+        const a = be16(mem, HW_BANK + n * 64 + y * 4), b = be16(mem, HW_BANK + n * 64 + y * 4 + 2);
+        for (let x = 0; x < 16; x++) {
+          const c = ((a >> (15 - x)) & 1) | (((b >> (15 - x)) & 1) << 1);
+          if (!c) continue;
+          const rgb = hwPalette[c], i = (y * 16 + x) * 4;
+          img.data[i] = rgb[0]; img.data[i + 1] = rgb[1]; img.data[i + 2] = rgb[2]; img.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      hwCache.set(n, cv);
+    }
+    return cv;
+  }
+
   function sine() {   // 256-step sine table at $6D01E, 8.8 fixed point
     const t = [];
     for (let i = 0; i < 256; i++) t.push(bes16(mem, 0x6D01E + i * 2));
     return t;
   }
 
-  return { init, loadLevel, ground, sprite, sine, get backCols() { return backCols; }, get mem() { return mem; } };
+  return { init, loadLevel, ground, sprite, hw, sine, get backCols() { return backCols; }, get mem() { return mem; } };
 })();
