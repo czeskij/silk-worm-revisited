@@ -53,6 +53,10 @@ From the disassembly (see `../Research/NOTES.md`):
   the screen flash and the screen clear
 - shots and missiles with their real hardware-sprite graphics, pointing the
   way they fly
+- the shield item (300 frames, or shoot it 18 times for a smart bomb) and the
+  bonus carrier that comes after enough kills and drops upgrades for each
+  player: double shot, then speed + rapid fire, then points + invulnerability
+  (upgrades are lost with a life)
 - all three bosses: the gunship, the ground vehicle and the final boss, with
   their hit counts, movement and attack patterns; beating the final boss ends
   the game
@@ -60,5 +64,6 @@ From the disassembly (see `../Research/NOTES.md`):
 Approximated for now:
 - the remaining enemy types (36 waves, 6 %) use a generic flying or ground
   behaviour with their real sprites
-- power-up effect (shield + double shot) and the bonus carrier
+- the bonus carrier's four parts are placed approximately (their layout
+  isn't decoded); losing upgrades on death is assumed
 - no sound, simple HUD

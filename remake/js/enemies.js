@@ -289,6 +289,7 @@ SW.enemies = (function () {
 
   // Spawner like loc_6FADA: `count` children, `gap` frames apart.
   function group(count, gap, make) {
+    if (W.bonusActive) count = Math.max(1, count >> 1);   // sub_6FACC: halved while the carrier is out
     const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
     return spawn(ctrl, function* () {
       for (let i = 0; i < count; i++) { make(i); yield* wait(gap); }
@@ -586,15 +587,75 @@ SW.enemies = (function () {
     });
   }
 
-  // $6F5FE (and from mines): power-up. Drifts up-left with the ground.
-  // Touch it to collect; 18 shots destroy it (sprite changes with 3 to go).
+  // $6F5FE (and from mines): shield item. Drifts up-left with the ground.
+  // Touch it ($6F94E): a 300-frame shield. Shoot it 18 times ($6F92C, sprite
+  // changes with 3 to go): it becomes a smart bomb ($6F6B6) that destroys
+  // everything on screen.
   function powerUp(x, y) {
     const e = obj({ kind: "powerup", x: x == null ? 0x14a : x, y: y == null ? 0x28 + W.rand(32) : y,
-                    vx: -0.25, vy: -0x800 / 65536, ground: true, hw: 16, hh: 16, hp: 18, score: 10,
+                    vx: -0.25, vy: -0x800 / 65536, ground: true, hw: 16, hh: 16, hp: 18, score: 0,
                     touchKills: false });
     setAnim(e, [34, 35]);
     e.onHit = (e) => { if (e.hp === 3) setAnim(e, [36, 37]); };
+    e.onDeath = () => { W.destroyAll(); W.flash = 30; };
     return spawn(e, drift);
+  }
+
+  // $6FE20: bonus carrier. Arrives after enough kills (game.js counts them),
+  // flies to (250, 64), gathers 4 parts 50 frames apart, waits 250 frames,
+  // then hunts like the gunship boss and has 16 hits. Destroyed ($6FFAC):
+  // drops a reward icon for each living player ($6FFD8).
+  function carrier() {
+    const e = obj({ kind: "carrier", x: 0x150, y: 0x40, hp: 16, score: 5, shootable: false, touchKills: true });
+    setAnim(e, [280, 281]);
+    e.parts = [];
+    e.onDeath = (e) => {
+      W.bonusActive = false;
+      for (const p of W.players) if (p.joined && !p.dead) reward(e.x, e.y, p);
+    };
+    return spawn(e, function* (e) {
+      // approach (250, 64) in two moves
+      let n = Math.abs(0xfa - e.x) >> 1;
+      e.vx = 0xfa > e.x ? 2 : -2;
+      yield* move(e, n); e.vx = 0;
+      n = Math.abs(0x40 - e.y);
+      e.vy = 0x40 > e.y ? 1 : -1;
+      yield* move(e, n); e.vy = 0;
+      // gather 4 parts (positions approximate: sub_70212 not decoded)
+      for (const [dx, dy] of [[0, 5], [-16, -8], [16, -8], [0, -18]]) {
+        e.parts.push({ dx, dy });
+        yield* move(e, 0x32);
+      }
+      yield* move(e, 0xfa);
+      e.shootable = true;
+      while (true) {
+        if (W.rand(65536) < 0x1f4) { bomb(e.x, e.y); missile(e.x, e.y + 20, 0x80, 25, 12); aimedAtEach(e.x, e.y); }
+        e.ax = e.x < 0xa0 ? 0x800 / 65536 : e.x > 0x10e ? -0x800 / 65536 : 0;
+        const h = W.players.find((p) => p.kind === "heli" && p.joined && !p.dead);
+        const ty = Math.max(0x28, h ? h.y + 4 : 0x40);
+        e.vy = ty > e.y ? 0.5 : ty < e.y ? -0.5 : 0;
+        physics(e); yield;
+      }
+    });
+  }
+
+  // $6E2BE / $6E2D6 / $6E2EE: reward icon for one player. Drifts left and homes
+  // to y 80 (helicopter) or 118 (jeep); only its owner can collect it.
+  // Order ($6FFD8): double shot if they don't have it, else speed + rapid fire,
+  // else points + invulnerability.
+  function reward(x, y, p) {
+    let type;
+    if (!p.power) type = "power"; else if (!p.speed) type = "speed"; else type = "points";
+    const e = obj({ kind: "pickup", x, y, vx: -0.25, hw: 10, hh: 10, shootable: false, touchKills: false,
+                    owner: p, type });
+    e.spr = { power: 0x1e, speed: 0x1f, points: 0x20 }[type];
+    const ty = p.kind === "heli" ? 0x50 : 0x76;
+    return spawn(e, function* (e) {
+      while (e.x > -32) {
+        e.vy = ty > e.y ? 1 : ty < e.y ? -1 : 0;
+        physics(e); yield;
+      }
+    });
   }
 
   // $6F736: palette flash, 3 pulses (not an enemy)
@@ -839,5 +900,5 @@ SW.enemies = (function () {
     generic(Object.assign({}, h, { frames }));
   }
 
-  return { attach, wave, decoded, setAnim, obj, EXPLOSION };
+  return { attach, wave, decoded, setAnim, obj, carrier, EXPLOSION };
 })();

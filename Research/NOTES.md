@@ -292,8 +292,40 @@ Still generic: 36 waves from ~25 small families.
 re-aim `d1` times every 5 frames turning ≤ 12 units; sprite `$210 + angle/8`
 (hardware sprite). `$6FB6C` aimed shot: 3 px/frame, can't be shot.
 
-Not decoded yet: the small families listed below as generic, the bonus carrier
-and the exact power-up effects.
+Not decoded yet: the small families listed below as generic. Power-ups and
+the bonus carrier: see their own section.
+
+### Power-ups and the bonus carrier
+
+Player struct (`-$7E0C` helicopter, `-$7D9A` jeep): `$4` hit flag, `$6` shield
+timer, `$8` blink/invulnerability timer, `$A` double shot, `$C` speed,
+`$E`/`$10` "already got it" markers, `$5E` fire delay.
+
+- **Shield item** (`$6F5FE`, also released by every mine shot down via
+  `$6FA40`): touching it (`$6F94E`) sets `$6 = −1`; `sub_6F520` turns that
+  into 300 frames (`$12C`) during which the hit flag is cleared every frame,
+  with an orb (`$6F680`, sprites 34/35) following the player; then
+  `$8 = 100` frames of blinking invulnerability.
+  **Shooting it 18 times** (`$6F92C`, sprites 36/37 from 3 hits left) makes it
+  a smart bomb (`$6F6B6`): explosion, white flash, and one frame of the
+  vehicle-collision flag `-$67A0` for whoever shot it, which destroys
+  everything on screen.
+- **Kill counter** (`sub_6FA8A`, on every scored kill unless a boss or a
+  carrier is out): starts at 32 (`-$7EAE`), then reloads from `-$7EAC`
+  (64, +8 per carrier, up to 104). At zero it sets `-$7FBE` (halves group
+  sizes in `sub_6FACC`) and spawns the carrier.
+- **Bonus carrier** (`$6FE20`, sprites 280/281): flies to (250, 64), gathers 4
+  parts (`$7002E`, `$70086`, `$700E6`, `$7013E`, sprites 290–293; their exact
+  layout, `sub_70212`, isn't decoded) 50 frames apart, waits 250 frames,
+  then becomes shootable (16 hits, `$6FF54` makes the parts recoil) and
+  hunts like the gunship, with a small chance each frame (500/65536) of a
+  bomb + missile + aimed shots.
+- **Rewards** (`$6FFAC` → `$6FFD8`): one icon per living player, drifting
+  left at 0.25 and homing to y 80 (helicopter) or 118 (jeep); only its owner
+  can take it (`$64` vs `-$7E36`). In order: **double shot** (icon 30,
+  `$6E34C`: `$A = −1`) if not owned, else **speed + rapid fire** (icon 31,
+  `$6E36A`: `$C = −1`, `$5E = 5`), else **points + 200 frames invulnerable**
+  (icon 32, `$6E388`).
 
 ### Bosses
 

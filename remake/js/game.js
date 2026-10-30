@@ -67,14 +67,15 @@ SW.game = (function () {
     scenery = { ptr: lv.sceneryPtr, delay: 0, objs: [] };
     shots = []; enemies = []; booms = [];
     Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0,
-                           stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false,
+                           stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false, bonusActive: false,
                            groundOverride: new Map(),   // ground column index -> column number
                            boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }),
                            // $708A2: everything on screen counts as hit by a vehicle
                            destroyAll: () => {
                              for (const e of enemies.slice())
                                if (e.alive && e.kind !== "boss" && e.kind !== "controller" && e.kind !== "wreck" &&
-                                   e.kind !== "part" && e.x > -16 && e.x < 336) destroy(e, null);
+                                   e.kind !== "part" && e.kind !== "carrier" && e.kind !== "pickup" &&
+                                   e.kind !== "powerup" && e.x > -16 && e.x < 336) destroy(e, null);
                            } });
     E.attach(world);
     for (const pl of players) { pl.x = pl.startX; pl.y = pl.startY; pl.vy = 0; pl.inv = 100; }
@@ -107,8 +108,9 @@ SW.game = (function () {
     if (p.y > 0x7a) d &= ~I.DOWN;
     if (p.x < 0x1e) d &= ~I.LEFT;
     if (p.x > 0x12c) d &= ~I.RIGHT;
-    p.x += dirTable[d][0] * 2;
-    p.y += dirTable[d][1] * 2;
+    const sp = p.speed ? 3 : 2;                        // 3x with the speed upgrade ($C(player))
+    p.x += dirTable[d][0] * sp;
+    p.y += dirTable[d][1] * sp;
     p.tilt = d & I.LEFT ? -1 : d & I.RIGHT ? 1 : 0;
     // fire: auto-repeat every `rate` frames; main shot right + 45 degree shot down
     if (input & I.FIRE) {
@@ -140,7 +142,7 @@ SW.game = (function () {
     let d = input & 15;
     if (p.x < 0x1e) d &= ~I.LEFT;
     if (p.x > 0x12c) d &= ~I.RIGHT;
-    p.x += dirTable[d][0] * 2;
+    p.x += dirTable[d][0] * (p.speed ? 3 : 2);
     if (input & I.FIRE) {
       if (--p.fireDelay < 0) {
         p.fireDelay = p.rate;
@@ -163,9 +165,10 @@ SW.game = (function () {
 
   let god = false;   // ?god=1 (testing): players can't be hit
   function killPlayer(p) {
-    if (god || p.dead || p.inv > 0) return;
+    if (god || p.dead || p.inv > 0 || p.shield > 0) return;
     booms.push({ x: p.x, y: p.y, f: 0 });
-    p.dead = 1; p.lives--; p.power = 0;
+    p.dead = 1; p.lives--;
+    p.power = 0; p.speed = 0; p.rate = 10; p.shield = 0;     // upgrades are lost with the life
   }
 
   // ---------------------------------------------------------------- scenery
@@ -197,8 +200,24 @@ SW.game = (function () {
   }
   const hit = (a, b) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
 
+  // sub_6FA8A: every scored kill counts down to the next bonus carrier
+  // (first after 32 kills, then 64, +8 each time up to 104), but not
+  // during a boss fight or while a carrier is out.
+  let killCounter = 0x20, killInterval = 0x40;
+  function countKill() {
+    if (world.stopScroll || world.bonusActive) return;
+    if (--killCounter > 0) return;
+    killCounter = killInterval;
+    if (killInterval < 0x68) killInterval += 8;
+    world.bonusActive = true;
+    E.carrier();
+  }
+
   function destroy(e, shooter) {
-    if (shooter) shooter.score += e.score * 100;
+    if (shooter) {
+      shooter.score += e.score * 100;
+      if (e.kind !== "boss" && e.kind !== "carrier" && e.kind !== "powerup") countKill();
+    }
     booms.push({ x: e.x, y: e.y, f: 0 });
     if (e.kind === "boss") for (let k = 0; k < 6; k++) booms.push({ x: e.x + rand(40) - 20, y: e.y + rand(30) - 15, f: -k * 5 });
     if (e.onDeath) e.onDeath(e);
@@ -232,7 +251,9 @@ SW.game = (function () {
       if (state !== "title" && stateTimer < 50) return;
       players.forEach((p, i) => {
         if (state === "title" ? inputs[i] & I.FIRE : fresh[i]) {
-          if (state !== "title") { players = [newHeli(), newJeep()]; startLevel(first); }
+          if (state !== "title") {
+            players = [newHeli(), newJeep()]; killCounter = 0x20; killInterval = 0x40; startLevel(first);
+          }
           players[i].joined = true; state = "play";
         }
       });
@@ -264,6 +285,8 @@ SW.game = (function () {
         return;
       }
       if (p.inv > 0) p.inv--;
+      // shield item (sub_6F520): 300 frames, then 100 frames of blinking
+      if (p.shield > 0 && --p.shield === 0) p.inv = Math.max(p.inv, 100);
       if (p.kind === "heli") updateHeli(p, inputs[i]); else updateJeep(p, inputs[i]);
     });
 
@@ -305,8 +328,14 @@ SW.game = (function () {
       for (const e of enemies) {
         if (!e.alive || e.hidden || e.kind === "controller" || e.kind === "wreck") continue;
         if (!hit(pb, enemyBox(e))) continue;
-        if (e.kind === "powerup") {
-          e.alive = false; p.power = 1; p.inv = Math.max(p.inv, 500); p.score += 1000;
+        if (e.kind === "pickup") {
+          if (e.owner !== p) continue;                    // icons are per player ($64 vs -$7E36)
+          e.alive = false;
+          if (e.type === "power") p.power = 1;            // $6E34C: second shot
+          else if (e.type === "speed") { p.speed = 1; p.rate = 5; }   // $6E36A: 3x speed, rapid fire
+          else { p.score += 5000; p.inv += 200; }         // $6E388: points, invulnerability
+        } else if (e.kind === "powerup") {
+          e.alive = false; p.shield = 300;                // $6F94E -> sub_6F520
         } else if (e.touchKills) {
           killPlayer(p);
           if (e.kind === "shot" || e.kind === "missile" || e.kind === "bomb") e.alive = false;
@@ -370,6 +399,7 @@ SW.game = (function () {
       ctx.restore();
       return;
     }
+    if (e.parts) for (const pt of e.parts) drawSprite(290 + ((frame >> 2) & 1), e.x + pt.dx, e.y + pt.dy);
     if (e.turret) drawSprite(e.turret, e.x, 0x82);
     if (e.spr >= 0 && e.spr < 400) drawSprite(e.spr, e.x, e.y);
   }
@@ -395,6 +425,7 @@ SW.game = (function () {
     for (const p of players) {
       if (!p.joined || p.dead || (p.inv > 0 && frame & 4)) continue;
       drawSprite(playerSprite(p), p.x, p.y);
+      if (p.shield > 0) drawSprite(34 + ((frame >> 1) & 1), p.x, p.y);   // the orb ($6F680)
     }
     for (const e of enemies) if (!e.ground || e.kind === "missile") drawEnemy(e);
 
@@ -448,7 +479,11 @@ SW.game = (function () {
     const b = enemies.find((e) => e.kind === "boss");
     return { level, waves: waves.length, decoded: d, enemies: enemies.length, clock, state,
              stopScroll: world.stopScroll,
-             players: players.map((p) => ({ kind: p.kind, joined: p.joined, x: Math.round(p.x), y: Math.round(p.y), dead: p.dead, lives: p.lives })),
+             players: players.map((p) => ({ kind: p.kind, joined: p.joined, x: Math.round(p.x), y: Math.round(p.y), dead: p.dead, lives: p.lives,
+                                            power: !!p.power, speed: !!p.speed, rate: p.rate, shield: p.shield || 0, score: p.score })),
+             bonus: { killCounter, killInterval, active: world.bonusActive,
+                      carrier: (enemies.find((e) => e.kind === "carrier") || {}).hp,
+                      pickups: enemies.filter((e) => e.kind === "pickup").map((e) => e.type) },
              boss: b && { x: Math.round(b.x), y: Math.round(b.y), hp: b.hp, spr: b.spr, shootable: b.shootable } };
   }
 
