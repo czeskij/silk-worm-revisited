@@ -16,6 +16,7 @@ SW.game = (function () {
   let state = "title", level = 1, lv, scroll, clock, waves, waveIdx, scenery;
   let players, shots, enemies, booms, rng = 12345, frame = 0, banner = 0, endTimer = 0;
   let paused = false, pauseLatch = false, first = 1;
+  let lastInputs = [0, 0], lastState = "", stateTimer = 0;
   const world = {};   // what enemies.js sees
 
   function rand(n) { rng = (rng * 1103515245 + 12345) >>> 0; return (rng >>> 8) % n; }
@@ -30,7 +31,8 @@ SW.game = (function () {
     return out.length ? out : [0];
   }
 
-  function init(canvas, firstLevel, startClock) {
+  function init(canvas, firstLevel, startClock, invulnerable) {
+    god = !!invulnerable;
     ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     mem = SW.gfx.mem;
@@ -64,7 +66,9 @@ SW.game = (function () {
     }
     scenery = { ptr: lv.sceneryPtr, delay: 0, objs: [] };
     shots = []; enemies = []; booms = [];
-    Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0 });
+    Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0,
+                           stopScroll: 0, gameWon: false,
+                           boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }) });
     E.attach(world);
     for (const pl of players) { pl.x = pl.startX; pl.y = pl.startY; pl.vy = 0; pl.inv = 100; }
   }
@@ -147,8 +151,9 @@ SW.game = (function () {
   }
   const playerSprite = (p) => (p.kind === "heli" ? heliSprite(p) : jeepSprite(p));
 
+  let god = false;   // ?god=1 (testing): players can't be hit
   function killPlayer(p) {
-    if (p.dead || p.inv > 0) return;
+    if (god || p.dead || p.inv > 0) return;
     booms.push({ x: p.x, y: p.y, f: 0 });
     p.dead = 1; p.lives--; p.power = 0;
   }
@@ -208,9 +213,15 @@ SW.game = (function () {
     if (paused) return;
 
     const inputs = players.map((p, i) => I.read(i));
+    const fresh = inputs.map((v, i) => (v & I.FIRE) && !(lastInputs[i] & I.FIRE));
+    lastInputs = inputs;
+    if (state !== lastState) { lastState = state; stateTimer = 0; }
+    stateTimer++;
     if (state === "title" || state === "over" || state === "end") {
+      // after the end/game over, wait a second and want a new press of fire
+      if (state !== "title" && stateTimer < 50) return;
       players.forEach((p, i) => {
-        if (inputs[i] & I.FIRE) {
+        if (state === "title" ? inputs[i] & I.FIRE : fresh[i]) {
           if (state !== "title") { players = [newHeli(), newJeep()]; startLevel(first); }
           players[i].joined = true; state = "play";
         }
@@ -221,9 +232,9 @@ SW.game = (function () {
     // late joiners
     players.forEach((p, i) => { if (!p.joined && inputs[i] & I.FIRE && p.lives > 0) { p.joined = true; p.inv = 100; } });
 
-    const bossAlive = enemies.some((e) => e.kind === "boss" && e.alive);
     const lastT = waves.length ? waves[waves.length - 1].t : LEVEL_LEN;
-    const scrolling = !(clock >= lastT && bossAlive) && clock < lastT + 400;
+    // a boss sets -$7E76 (1 = fighting, 2 = destroyed): either stops the scroll
+    const scrolling = !world.stopScroll && clock < lastT + 400;
     world.scrollDelta = scrolling ? 1 : 0;
     world.players = players;
     if (scrolling) {
@@ -267,6 +278,7 @@ SW.game = (function () {
         if (!hit(eb, sb) && !(tb && hit(tb, sb))) continue;
         s.dead = true;
         e.hp--;
+        if (e.kind === "boss") e.blink = 3;                   // $6F8E0: flash on each hit
         if (e.onHit) e.onHit(e);
         if (e.hp <= 0) { destroy(e, s.from); break; }
       }
@@ -278,7 +290,7 @@ SW.game = (function () {
       if (!p.joined || p.dead) continue;
       const pb = spriteBox(playerSprite(p), p.x, p.y);
       for (const e of enemies) {
-        if (!e.alive || e.kind === "controller" || e.kind === "wreck") continue;
+        if (!e.alive || e.hidden || e.kind === "controller" || e.kind === "wreck") continue;
         if (!hit(pb, enemyBox(e))) continue;
         if (e.kind === "powerup") {
           e.alive = false; p.power = 1; p.inv = Math.max(p.inv, 500); p.score += 1000;
@@ -295,9 +307,11 @@ SW.game = (function () {
 
     if (banner > 0) banner--;
     if (!players.some((p) => p.joined || p.dead)) { state = "over"; return; }
-    if (clock >= lastT && !enemies.some((e) => e.kind === "boss") && waveIdx >= waves.length) {
+    const bossBeaten = world.stopScroll === 2;
+    const noBoss = !world.stopScroll && clock >= lastT && waveIdx >= waves.length;
+    if (bossBeaten || noBoss) {
       if (++endTimer > 200) {
-        if (level >= 11) state = "end";
+        if (world.gameWon || level >= 11) state = "end";
         else startLevel(level + 1);
       }
     }
@@ -318,7 +332,8 @@ SW.game = (function () {
   }
 
   function drawEnemy(e) {
-    if (e.kind === "controller") return;
+    if (e.kind === "controller" || e.hidden) return;
+    if (e.blink > 0) { e.blink--; if (frame & 1) return; }
     if (e.kind === "shot") {
       ctx.fillStyle = "#ff5040";
       ctx.fillRect(Math.round(e.x) - 1, Math.round(e.y) - 16, 3, 3);
@@ -405,7 +420,11 @@ SW.game = (function () {
   function stats() {
     let d = 0;
     for (const w of waves) if (E.decoded(w.addr)) d++;
-    return { level, waves: waves.length, decoded: d, enemies: enemies.length, clock };
+    const b = enemies.find((e) => e.kind === "boss");
+    return { level, waves: waves.length, decoded: d, enemies: enemies.length, clock, state,
+             stopScroll: world.stopScroll,
+             players: players.map((p) => ({ kind: p.kind, joined: p.joined, x: Math.round(p.x), y: Math.round(p.y), dead: p.dead, lives: p.lives })),
+             boss: b && { x: Math.round(b.x), y: Math.round(b.y), hp: b.hp, spr: b.spr, shootable: b.shootable } };
   }
 
   return { init, step, draw, stats, W, H };

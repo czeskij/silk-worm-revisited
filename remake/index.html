@@ -61,7 +61,7 @@
     if (problem) { err.textContent = problem; return false; }
     SW.gfx.init(adf, mem);
     const q = new URLSearchParams(location.search);
-    SW.game.init(canvas, Number(q.get("level")) || 1, Number(q.get("t")) || 0);
+    SW.game.init(canvas, Number(q.get("level")) || 1, Number(q.get("t")) || 0, q.get("god") === "1");
     picker.style.display = "none";
     canvas.style.display = "block";
     fit();

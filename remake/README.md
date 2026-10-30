@@ -20,7 +20,7 @@ Then open <http://localhost:8000/remake/>.
 
 URL options (handy for testing): `?adf=path` loads a disk image from the
 server, `?level=N` starts at level N, `?t=N` starts N pixels into the level
-(4704 = boss).
+(4704 = boss), `?god=1` makes the players invulnerable.
 
 ## Controls
 
@@ -47,11 +47,13 @@ From the disassembly (see `../Research/NOTES.md`):
 - enemy behaviour for 59 % of all waves (`js/enemies.js`): mines, tanks,
   missile launchers with homing missiles, helicopter groups, walkers with
   turrets, AA guns, power-ups, wrecks, scores and the screen flash
+- all three bosses: the gunship, the ground vehicle and the final boss, with
+  their hit counts, movement and attack patterns; beating the final boss ends
+  the game
 
 Approximated for now:
 - the remaining enemy types (41 % of waves, mostly levels 4, 5, 6 and 11) use a
   generic flying or ground behaviour with their real sprites
-- bosses (one sprite piece, not the full multi-part boss)
 - power-up effect (shield + double shot) and the bonus carrier
 - bullets and missiles are drawn as simple shapes (their hardware-sprite
   graphics aren't extracted yet), no sound, simple HUD

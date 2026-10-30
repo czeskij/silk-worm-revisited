@@ -244,9 +244,23 @@ re-aim `d1` times every 5 frames turning ≤ 12 units; sprite `$210 + angle/8`
 (hardware sprite). `$6FB6C` aimed shot: 3 px/frame, can't be shot.
 
 Not decoded yet: the other 72 families (41 % of waves, mostly levels 4, 5, 6
-and 11), the bosses (`$705D0`, `$6DB1E`, `$70512`), the gun emplacement built
-into the ground layer (`$6E03A`), the bonus carrier and the exact power-up
-effects.
+and 11), the gun emplacement built into the ground layer (`$6E03A`), the bonus
+carrier and the exact power-up effects.
+
+### Bosses
+
+All bosses set `-$7E76 = 1` (the scroll step `sub_69C4A` skips while it's
+non-zero), start unshootable while they arrive, and use the hit handler
+`$6F8E0`: each hit decrements `$66` and flashes them for 3 frames (`$34`);
+at zero `-$7E76 = 2` (level over), a 50-frame explosion runs (`sub_6F8CA`) and
+the next level loads. Each of their attacks fires with probability 87.5 %
+(`sub_6D3F4`: random ≤ `$E000`).
+
+| Boss | Levels | Behaviour |
+|---|---|---|
+| `$705D0` gunship (sprites 240/242) | 1, 3, 5, 7, 9 | enters at (351, 64), −0.67 px/frame, 150 frames unshootable; `level×8 + 40` hits, hitbox ±16×±12, score 5. Loop: bomb (`$6DD16`), missile `$706EE` (dropped below it with acceleration, homes after 25 frames), an aimed shot at each player (`$6FB3A`), and from level 2 a drone (`$6E42E`, sprites 98/99, accelerates away left, can't be shot). Then for `(11 − level)×8 + 35` frames (`sub_70672`): accelerates (±`$600`) to stay within x 160–270 and moves at 0.375 px/frame toward the helicopter's height (or jeep x / 3 + 32, minimum y 40) |
+| `$6DB1E` ground vehicle (209/229, rear part `$6DC42` 218/238 at x−18, y+32) | 2, 4, 6, 8, 10 | enters at (368, 118), 110 frames unshootable, `level×8 + 40` hits. 14 rounds: aimed shots, a lobbed bomb (`$6DCB4`: after 0–31 frames thrown up at −2 and left at up to −4, then falls and rolls), an aimed missile (`$707BC`), 1 in 8 rounds 4 extra bombs; wait `(11 − level)×8 + 45` frames between rounds. Then forever: creep 1 px left every 14 frames bobbing ±1, firing a missile and a bomb each step, wrapping from x −32 back to 368 |
+| `$70512` final boss (310–313) | 11 | stationary at (281, 98), 150 hits (`$6E224`: small explosion per hit; at zero → `$703DA`, game end). Loop: 125 frames on a random frame each frame, launching a firing helicopter (`$6E588`) every 8 frames; 50 × (random frame, sprite 80); then a pod (`$6D616`: sprites 80–82, drifts left at 0.5 px/frame, fires 32 bullets every 4 frames turning 12 units each — a spiral; bullets fly 2 px/frame for 25 frames then aim at a player once) |
 
 ### Sound
 
