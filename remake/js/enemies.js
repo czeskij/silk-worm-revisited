@@ -1,0 +1,380 @@
+// Enemy behaviour, decoded from the wave routines (see Research/NOTES.md,
+// "Enemy behaviour"). Each enemy is a generator script, like the original's
+// cooperative tasks: one `yield` = one 50 Hz frame.
+//
+// Object model (from the disassembly): position (x, y), velocity, acceleration,
+// `ground` = moves with the ground scroll ($38 bit 0), an animation list,
+// a hitbox, a score ($24, shown x100) and what happens when it's shot:
+// explode ($6FA40) or leave a wreck ($6FA58, sprite $72).
+"use strict";
+
+SW.enemies = (function () {
+  let W;   // world interface, set by attach()
+  const EXPLOSION = [320, 321, 322, 323, 324];
+  let heliGroupCounter = 0;   // -$7FE6: every 4th helicopter group scatters
+
+  function attach(world) { W = world; heliGroupCounter = 0; }
+
+  // ---------------------------------------------------------------- objects
+
+  function obj(props) {
+    return Object.assign({
+      x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, ground: false,
+      anim: null, spr: -1, hw: 0, hh: 0, score: 0, hp: 1,
+      wreck: null, shootable: true, touchKills: true, kind: "enemy", alive: true,
+    }, props);
+  }
+
+  // Animation list as in sub_6C8DA/sub_6C90C: frames advance every `delay`
+  // frames (2 by default, $20nn sets it); `hold` = stop on the last frame ($FFFE).
+  function setAnim(e, frames, delay, hold) {
+    e.anim = { frames, delay: delay || 2, i: 0, t: delay || 2, hold: !!hold };
+    e.spr = frames[0];
+  }
+  function stepAnim(e) {
+    const a = e.anim;
+    if (!a || --a.t > 0) return;
+    a.t = a.delay;
+    if (a.i < a.frames.length - 1) a.i++;
+    else if (!a.hold) a.i = 0;
+    e.spr = a.frames[a.i];
+  }
+
+  // sub_6C96A: one frame of movement
+  function physics(e) {
+    e.vx += e.ax; e.vy += e.ay;
+    e.x += e.vx; e.y += e.vy;
+    if (e.ground) e.x -= W.scrollDelta;
+    stepAnim(e);
+  }
+  function* move(e, n) { for (let i = 0; i < n; i++) { physics(e); yield; } }   // sub_6C810
+  function* wait(n) { for (let i = 0; i < n; i++) yield; }                      // sub_6C7D4
+  function offscreen(e) { return e.x < -64 || e.x > 420 || e.y > 230 || e.y < -80; }
+  function* drift(e) { while (!offscreen(e)) { physics(e); yield; } }           // sub_6C7FC
+
+  function spawn(e, script) {
+    e.script = script(e);
+    W.enemies.push(e);
+    return e;
+  }
+
+  // ---------------------------------------------------------------- aiming
+
+  const S = () => W.sin;
+  function velocity(e, angle, speed) {   // sub_6C8BC: speed in px/frame
+    e.vx = S()[(angle + 64) & 255] * speed / 256;
+    e.vy = S()[angle & 255] * speed / 256;
+  }
+  function angleTo(x, y, tx, ty) {        // sub_6CBB8 (atan2, 256 steps)
+    return Math.round(Math.atan2(ty - y, tx - x) / (2 * Math.PI) * 256) & 255;
+  }
+  function target(prefer) {               // sub_6FC32: a live player, else (160, 150)
+    const live = W.players.filter((p) => p.joined && !p.dead);
+    if (prefer) { const p = live.find((q) => q.kind === prefer); if (p) return p; }
+    if (!live.length) return { x: 0xa0, y: 0x96 };
+    return live[W.rand(live.length)];
+  }
+
+  // ---------------------------------------------------------------- projectiles
+
+  // $6FB6C: aimed shot, 3 px/frame, can't be shot down
+  function aimedShot(x, y, prefer) {
+    const t = target(prefer);
+    const e = obj({ kind: "shot", x, y, hw: 3, hh: 3, shootable: false });
+    velocity(e, angleTo(x, y, t.x, t.y), 3);
+    return spawn(e, function* (e) {
+      while (!offscreen(e) && e.y < 0x9e) { physics(e); yield; }
+    });
+  }
+
+  // loc_707C0: missile. Flies `launch` frames as fired, then homes:
+  // re-aims `steps` times every 5 frames, turning up to 12 units each time.
+  function missile(x, y, angle, launch, steps, ay) {
+    const e = obj({ kind: "missile", x, y, ground: true, hw: 4, hh: 4, score: 1, angle });
+    velocity(e, angle, 2.5);
+    e.ay = ay || 0;
+    return spawn(e, function* (e) {
+      for (let i = 0; i < launch && e.y < 0x9e; i++) { physics(e); yield; }
+      const t = target();
+      e.ax = e.ay = 0;
+      e.angle = angleTo(e.x, e.y, t.x, t.y);
+      velocity(e, e.angle, 2.5);
+      for (let s = 0; s < steps; s++) {
+        for (let i = 0; i < 5; i++) { if (e.y >= 0x9e || offscreen(e)) return; physics(e); yield; }
+        let d = ((angleTo(e.x, e.y, t.x, t.y) - e.angle + 128) & 255) - 128;
+        d = Math.max(-12, Math.min(12, d));
+        e.angle = (e.angle + d) & 255;
+        velocity(e, e.angle, 2.5);
+      }
+      while (!offscreen(e) && e.y < 0x9e) { physics(e); yield; }
+    });
+  }
+
+  // ---------------------------------------------------------------- families
+
+  // $6D672: mine/dome on the road. Shot: explodes and releases a power-up.
+  function mine() {
+    const e = obj({ x: 0x14f, y: 0x9e, ground: true, hh: 10, onDeath: (e) => powerUp(e.x, e.y - 24) });
+    setAnim(e, [168, 169]);
+    return spawn(e, drift);
+  }
+
+  // $6D6C8 / $6D6C0 / $6D6AC: tank. Level 1: passive. Later: fires a shell at
+  // intervals of (11 - level) * 8 + 10 frames while it's right of x = 50.
+  function tank(y) {
+    const e = obj({ x: 0x15e, y, ground: true, hw: 18, hh: 10, score: 6, wreck: 166 });
+    setAnim(e, [162]);
+    return spawn(e, function* (e) {
+      if (W.level === 1) { yield* drift(e); return; }
+      const gap = (11 - W.level) * 8 + 10;
+      while (true) {
+        yield* move(e, gap);
+        if (e.x <= 0x32) { yield* drift(e); return; }
+        setAnim(e, [164, 162], 0x14, true);
+        yield* move(e, 5);
+        missile(e.x, e.y - 8, 0xc0, 15, 12, -0x2222 / 65536);   // $7071E
+        yield* move(e, 15);
+      }
+    });
+  }
+
+  // $6D7A2 / $6D79A / $6D78C: missile launcher: 4 missiles `gap` frames apart, rest 50.
+  function launcher(y, gap) {
+    const e = obj({ x: 0x14f, y, ground: true, score: 3, wreck: 172 });
+    setAnim(e, [170]);
+    return spawn(e, function* (e) {
+      while (true) {
+        for (let k = 0; k < 4; k++) {
+          yield* move(e, gap);
+          if (offscreen(e)) return;
+          setAnim(e, [171, 170], 5, true);
+          missile(e.x, e.y - 8, 0xc0, 0, 12);                    // $70754
+        }
+        yield* move(e, 50);
+        if (offscreen(e)) return;
+      }
+    });
+  }
+
+  // $6E570 / $6E54C: helicopter group (count from the stub, 12 frames apart).
+  function heliGroup(count, fires) {
+    heliGroupCounter = (heliGroupCounter + 1) & 3;
+    const scatter = heliGroupCounter === 0;
+    const base = randomHeight();
+    const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
+    return spawn(ctrl, function* () {
+      for (let i = 0; i < count; i++) {
+        heli(scatter ? randomHeight() : base, fires);
+        yield* wait(12);
+      }
+    });
+  }
+  function randomHeight() {        // sub_6E4EA
+    let y;
+    do { y = (W.rand(128)) + 0x20; } while (y >= 0x76);
+    let drift = W.rand(1024) / 65536;
+    if (y >= 0x64) drift = -drift;
+    return { y, drift };
+  }
+  function heli(h, fires) {        // $6E5AA
+    const p = target("heli");
+    const fromLeft = p.x > 0xa0;
+    const e = obj({ x: fromLeft ? -31 : 351, y: h.y, ax: fromLeft ? 0x900 / 65536 : -0x900 / 65536,
+                    ay: h.drift, score: 1 });
+    const table = (fromLeft ? 0x6e6a4 : 0x6e644) + W.level * 8;
+    setAnim(e, W.animAt(table));
+    e.fireTimer = fires ? W.rand(64) : 0;
+    return spawn(e, function* (e) {
+      while (!(e.x > 400 || e.x < -80)) {
+        if (e.y >= 0x84 || e.y <= 0x30) { e.ay = 0; e.vy -= e.vy / 16; }
+        physics(e);
+        if (fires) {                                             // sub_6E70C
+          e.fireTimer = (e.fireTimer - 1) & 255;
+          if (e.fireTimer === 0) {
+            aimedShot(e.x, e.y);
+            if (W.rand(16) === 0) bomb(e.x, e.y);
+          }
+        }
+        yield;
+      }
+    });
+  }
+
+  // $6DD16: bomb dropped by a helicopter: falls, then rolls toward the jeep.
+  function bomb(x, y) {
+    const e = obj({ kind: "bomb", x, y, ay: 0xa00 / 65536, hw: 5, hh: 5, score: 1 });
+    setAnim(e, [60, 60, 61], 12);
+    return spawn(e, function* (e) {
+      while (e.y < 0x96) { physics(e); if (offscreen(e)) return; yield; }
+      e.y = 0x96; e.vy = e.ay = 0; e.ground = true;
+      const j = target("jeep");
+      e.vx = j.x < e.x ? -1 : 1;
+      setAnim(e, [63, 62], 4);
+      yield* drift(e);
+    });
+  }
+
+  // $6FD0E / $6FD10: walker with a gun turret (count from the stub, 32 frames apart).
+  function walkerGroup(count) {
+    const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
+    return spawn(ctrl, function* () {
+      for (let i = 0; i < count; i++) { walker(); yield* wait(32); }
+    });
+  }
+  function walker() {
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, score: 3, wreck: 128, turret: 123 });
+    setAnim(e, [124, 125, 126, 127], 0x25);
+    return spawn(e, function* (e) {
+      let gun = 0x32;
+      while (!offscreen(e)) {
+        for (let i = 0; i < 0x25; i++) {
+          physics(e);
+          if (--gun <= 0) { gun = 0x32; aimedShot(e.x, 0x82 - 4, "jeep"); }
+          if (offscreen(e)) return;
+          yield;
+        }
+        e.x -= 6;
+      }
+    });
+  }
+
+  // $6D416: anti-aircraft gun. Level 1: rolls left. Later: after 200 frames it
+  // shuffles left/right until the helicopter is on its firing line
+  // (x - heliX = (y - heliY) * 32 / 14), then fires a burst every 30 frames.
+  function aaGun() {
+    const e = obj({ x: 0x14f, y: 0x8e, vx: -0.5, ground: true, score: 3, wreck: 122 });
+    setAnim(e, [120], 2, true);
+    return spawn(e, function* (e) {
+      if (W.level === 1) { yield* drift(e); return; }
+      yield* move(e, 200);
+      while (!offscreen(e)) {
+        const h = W.players.find((p) => p.kind === "heli" && p.joined && !p.dead);
+        if (!h) { e.vx = -0.5; physics(e); yield; continue; }
+        setAnim(e, [121], 2, true);
+        const d0 = (e.x + 4 - h.x) & ~1, d1 = ((e.y - 4 - h.y) * 32 / 14) & ~1;
+        if (Math.abs(d1 - d0) <= 2) {
+          e.vx = 0;
+          for (let k = 0; k < 3; k++) {
+            const s = obj({ kind: "shot", x: e.x - 4, y: e.y - 8, hw: 3, hh: 3, shootable: false });
+            velocity(s, angleTo(e.x, e.y, h.x, h.y), 3);
+            spawn(s, function* (s) { while (!offscreen(s) && s.y < 0x9e) { physics(s); yield; } });
+            yield* move(e, 6);
+          }
+          yield* move(e, 30);
+        } else {
+          e.vx = d1 > d0 ? 1.5 : -1.5;
+          physics(e); yield;
+        }
+      }
+    });
+  }
+
+  // $6F5FE (and from mines): power-up. Drifts up-left with the ground.
+  // Touch it to collect; 18 shots destroy it (sprite changes with 3 to go).
+  function powerUp(x, y) {
+    const e = obj({ kind: "powerup", x: x == null ? 0x14a : x, y: y == null ? 0x28 + W.rand(32) : y,
+                    vx: -0.25, vy: -0x800 / 65536, ground: true, hw: 16, hh: 16, hp: 18, score: 10,
+                    touchKills: false });
+    setAnim(e, [34, 35]);
+    e.onHit = (e) => { if (e.hp === 3) setAnim(e, [36, 37]); };
+    return spawn(e, drift);
+  }
+
+  // $6F736: palette flash, 3 pulses (not an enemy)
+  function flash() {
+    const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
+    return spawn(ctrl, function* () {
+      for (let k = 0; k < 3; k++) { W.flash = 21; yield* wait(42); }
+    });
+  }
+
+  // Bosses: not decoded yet. One sprite piece, scripted approximately.
+  function boss(frames) {
+    const e = obj({ kind: "boss", x: 380, y: 70, vx: -1, hp: 60, maxHp: 60, score: 50 });
+    setAnim(e, frames, 6);
+    return spawn(e, function* (e) {
+      let t = 0;
+      while (true) {
+        t++;
+        if (e.x > 250) e.x += e.vx; else e.y = 70 + Math.sin(t / 40) * 35;
+        stepAnim(e);
+        if (t % 50 === 0) for (let k = -1; k <= 1; k++) {
+          const p = target();
+          const s = obj({ kind: "shot", x: e.x, y: e.y, hw: 3, hh: 3, shootable: false });
+          velocity(s, (angleTo(e.x, e.y, p.x, p.y) + k * 12) & 255, 2.2);
+          spawn(s, function* (s) { while (!offscreen(s)) { physics(s); yield; } });
+        }
+        yield;
+      }
+    });
+  }
+
+  // Families not decoded yet: real sprites, generic movement.
+  function generic(h) {
+    if (h.y !== null && h.y >= 0x78) {
+      for (let i = 0; i < Math.min(h.count, 8); i++) {
+        const e = obj({ x: (h.x || 0x14f) + i * 40, y: h.y, ground: true, vx: -0.5, score: 3 });
+        setAnim(e, h.frames, 8);
+        spawn(e, function* (e) {
+          let gun = 45 + i * 20;
+          while (!offscreen(e)) { physics(e); if (--gun === 0) { gun = 90; aimedShot(e.x, e.y - 8); } yield; }
+        });
+      }
+      return;
+    }
+    const ctrl = obj({ kind: "controller", shootable: false, touchKills: false });
+    spawn(ctrl, function* () {
+      const fromLeft = target("heli").x > 0xa0, y0 = 32 + W.rand(80);
+      for (let i = 0; i < Math.min(h.count, 16); i++) {
+        const e = obj({ x: fromLeft ? -20 : 340, y: y0, vx: (fromLeft ? 1 : -1) * 2, score: 1 });
+        setAnim(e, h.frames, 8);
+        spawn(e, function* (e) {
+          let t = W.rand(64);
+          while (e.x > -60 && e.x < 380) {
+            physics(e); e.y += Math.sin(++t / 12) * 0.6;
+            if (t % 110 === 60) aimedShot(e.x, e.y);
+            yield;
+          }
+        });
+        yield* wait(12);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- dispatch
+
+  const FAMILY = {
+    "6D672": () => mine(),
+    "6D6C8": () => tank(0x9a), "6D6C0": () => tank(0x8a), "6D6AC": () => tank(0x82),
+    "6D7A2": () => launcher(0x8e, 0x32), "6D79A": () => launcher(0x8e, 0x0a), "6D78C": () => launcher(0x7a, 0x32),
+    "6D416": () => aaGun(),
+    "6F5FE": () => powerUp(),
+    "6F736": () => flash(),
+  };
+  const HELI_NO_FIRE = new Set(["6E556", "6E55A", "6E55E", "6E562", "6E566", "6E56A", "6E56E"]);
+  const HELI_FIRE = new Set(["6E53A", "6E53E", "6E542", "6E546", "6E54A"]);
+  const WALKER = new Set(["6FD0E", "6FD08", "6FD0C", "6FD10"]);
+  const BOSSES = new Set(["705D0", "6DB1E", "70512"]);
+  const SKIP = new Set(["6E03A"]);   // gun emplacement in the ground layer: not drawn yet
+
+  // Which waves use decoded behaviour (for the notes / debugging)
+  function decoded(addr) {
+    return !!(FAMILY[addr] || HELI_NO_FIRE.has(addr) || HELI_FIRE.has(addr) || WALKER.has(addr));
+  }
+
+  function wave(addr) {
+    const h = HINTS[addr];
+    const count = h ? h.count : 1;
+    if (FAMILY[addr]) return FAMILY[addr]();
+    if (HELI_NO_FIRE.has(addr)) return heliGroup(count, false);
+    if (HELI_FIRE.has(addr)) return heliGroup(count, true);
+    if (WALKER.has(addr)) return walkerGroup(count);
+    if (SKIP.has(addr) || !h) return;
+    let frames = h.frames[W.level] || Object.values(h.frames)[0];
+    if (!frames) return;
+    if (BOSSES.has(addr)) return boss(frames);
+    generic(Object.assign({}, h, { frames }));
+  }
+
+  return { attach, wave, decoded, setAnim, obj, EXPLOSION };
+})();

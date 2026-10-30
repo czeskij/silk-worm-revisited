@@ -195,6 +195,59 @@ Object fields seen so far: `(a5)` X and `4(a5)` Y (16.16), `$14`/`$18` velocity,
   `waves/waves_level_NN.png`: timeline per level (bar = clock, icons = group).
   `waves/legend.png`: all 116 routines with their main sprite.
 
+### Enemy behaviour
+
+**Task/object API** (all enemies are built from these):
+
+| Routine | Does |
+|---|---|
+| `sub_6C96A` | one frame: velocity += acceleration (`$14`/`$18`), position += velocity (`$8`/`$C`), minus scroll if `$38` bit 0 (ground) / bit 1 (backdrop); then `sub_6C9A0`: animate, draw (`sub_712AA`), collide (`sub_6CAFE`), yield |
+| `sub_6C810(d0)` | `d0` frames of `sub_6C96A` |
+| `sub_6C7D4(d0)` | wait `d0` frames (no movement, not drawn) |
+| `sub_6C7FC` | keep moving until off screen, then end |
+| `sub_6C660` / `sub_6C62C` | spawn a child task at `a0`, copying position |
+| `loc_6C6FE` | end task |
+| `sub_6C8DA` | set animation from the words after the `bsr` (code resumes after the list) |
+| `sub_6C8F6` | set animation from `a0` |
+| `sub_6C8BC` | velocity from angle `$10` and speed `$12` |
+| `sub_6C88A(d0)` | turn toward target `d1` by at most `d0` (0 = snap) |
+| `sub_6CBB8` | atan2 → 256-step angle |
+| `sub_6FC32` | pick a target: a live player, else (160, 150) |
+| `loc_6FADA` | spawn `d0` children of `a0`, `d1` frames apart |
+
+Collision (`sub_6CAFE`): flags `$3B` pick checks, hitbox half-size `$1C`/`$1E`:
+bit 0 player shot → handler `$3C`; bit 1 player vehicle → `$40`; bit 3 → `$44`;
+bit 4 level end → `$48`; bit 2 blitter collision → `$4C`. Common handlers:
+`$6FA34` kill the touching player; `$6FA40` explode + score + (mines) release a
+power-up; `$6FA58` become a wreck (sprite `$72`) that scrolls away. `$24` is
+the score value (`sub_6FA8A`); every N kills (N from `-$7EAC`, +8 each time,
+up to `$68`) a bonus carrier `$6FE20` appears and group sizes are halved
+while it's around (`sub_6FACC`).
+
+**Families decoded** (wave routine → behaviour), 59 % of all waves:
+
+| Routine | Enemy | Behaviour |
+|---|---|---|
+| `6D672` | mine / dome (168, 169) | fixed to the road at (`$14F`, `$9E`); shot: explodes, releases a power-up; touch kills |
+| `6D6C8` `6D6C0` `6D6AC` | tank (162, wreck 166) | Y `$9A`/`$8A`/`$82`, hitbox ±18×±10, score 6. Level 1 passive; later: every (11 − level)×8 + 10 frames fires a shell (`$7071E`) while x > 50 |
+| `6D7A2` `6D79A` `6D78C` | missile launcher (170, wreck 172) | Y `$8E`/`$8E`/`$7A`; 4 homing missiles (`$70754`) 50 or 10 frames apart, then 50 frames rest |
+| `6E556`–`6E56E` | helicopter group, no fire | 4–16 helicopters 12 frames apart, all at one random height (every 4th group scattered), enter from the side away from the player and accelerate (`$900`) across; small random vertical drift, damped at Y 48 / 132. Sprites per level from `$6E644` / `$6E6A4 + level×8` |
+| `6E53A`–`6E54A` | helicopter group, firing | same, plus an aimed shot (`$6FB6C`, 3 px/frame) after 0–63 frames then every 256, and sometimes a bomb (`$6DD16`) |
+| `6FD0E` `6FD10` | walker + gun turret (124–127, turret 123, wreck 128) | on the ground at Y `$8E`, steps 6 px left every 37 frames; turret fires at the jeep every 50 frames |
+| `6D416` | AA gun (120/121, wreck 122) | level 1 rolls left; later shuffles (±1.5 px/frame) until the helicopter is on its firing line (x − heliX = (y − heliY)×32/14), fires a burst, waits 30 frames |
+| `6F5FE` | power-up (34/35, then 36/37) | drifts up-left with the ground; 18 hits to destroy; touching it gives the player item (player field `$6`) |
+| `6F736` | palette flash | colour `$448` pulsed 3 times |
+
+**Projectiles**: `loc_707C0` missiles/shells: 2.5 px/frame, hitbox ±8, fly
+`d0` frames as fired (shell: straight up with extra upward acceleration), then
+re-aim `d1` times every 5 frames turning ≤ 12 units; sprite `$210 + angle/8`
+(hardware sprite). `$6FB6C` aimed shot: 3 px/frame, can't be shot.
+
+Not decoded yet: the other 72 families (41 % of waves, mostly levels 4, 5, 6
+and 11), the bosses (`$705D0`, `$6DB1E`, `$70512`), the gun emplacement built
+into the ground layer (`$6E03A`), the bonus carrier and the exact power-up
+effects.
+
 ### Sound
 
 - Music/SFX player at `$71666`: jump table `init / play / ? / stop`.

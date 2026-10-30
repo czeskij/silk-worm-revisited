@@ -1,26 +1,34 @@
 // Silkworm revisited: game logic at the original 50 Hz.
 // "From the disassembly" comments mark behaviour taken from the 68000 code;
-// everything else (enemy movement, hit points, scoring) is approximated
-// until those routines are decoded.
+// enemy behaviour lives in enemies.js.
 "use strict";
 
 SW.game = (function () {
   const { be16, bes16, be32 } = SW.adf;
-  const I = SW.input;
+  const I = SW.input, E = SW.enemies;
   const W = 320, H = 200;
   const LEVEL_LEN = 4704;          // wave clock = ground pixels scrolled
   const GROUND_Y = 0x98;           // jeep's ground level
   const SHOT_FLOOR = 0x9E;         // shots die here
   const SCRIPTS = 0x6EEA0, ROUTINE_BASE = 0x6D21E;
-  const BOSSES = new Set(["705D0", "6DB1E", "70512"]);
-  const EXPLOSION = [320, 321, 322, 323, 324];
 
   let ctx, mem, sin, dirTable;
   let state = "title", level = 1, lv, scroll, clock, waves, waveIdx, scenery;
-  let players, shots, enemies, enemyShots, booms, rng = 12345, frame = 0, banner = 0, endTimer = 0;
-  let paused = false, pauseLatch = false;
+  let players, shots, enemies, booms, rng = 12345, frame = 0, banner = 0, endTimer = 0;
+  let paused = false, pauseLatch = false, first = 1;
+  const world = {};   // what enemies.js sees
 
   function rand(n) { rng = (rng * 1103515245 + 12345) >>> 0; return (rng >>> 8) % n; }
+
+  function animAt(a) {   // animation list in memory: frame words up to the first negative
+    const out = [];
+    for (let i = 0; i < 16; i++) {
+      const v = be16(mem, a + i * 2);
+      if (v & 0x8000) break;
+      if (!(v & 0x6000) && v < 400) out.push(v);
+    }
+    return out.length ? out : [0];
+  }
 
   function init(canvas, firstLevel, startClock) {
     ctx = canvas.getContext("2d");
@@ -40,7 +48,6 @@ SW.game = (function () {
     }
     state = "title";
   }
-  let first = 1;
 
   // ---------------------------------------------------------------- level
 
@@ -56,7 +63,9 @@ SW.game = (function () {
       p += 4;
     }
     scenery = { ptr: lv.sceneryPtr, delay: 0, objs: [] };
-    shots = []; enemies = []; enemyShots = []; booms = [];
+    shots = []; enemies = []; booms = [];
+    Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0 });
+    E.attach(world);
     for (const pl of players) { pl.x = pl.startX; pl.y = pl.startY; pl.vy = 0; pl.inv = 100; }
   }
 
@@ -64,11 +73,11 @@ SW.game = (function () {
 
   function newHeli() {
     return { kind: "heli", joined: false, startX: 0x40, startY: 0x40, x: 0x40, y: 0x40, vy: 0,
-             lives: 3, score: 0, fireDelay: 0, rate: 10, tilt: 0, dead: 0, inv: 0, w: 28, h: 10 };
+             lives: 3, score: 0, fireDelay: 0, rate: 10, tilt: 0, dead: 0, inv: 0, power: 0 };
   }
   function newJeep() {
     return { kind: "jeep", joined: false, startX: 0x40, startY: GROUND_Y, x: 0x40, y: GROUND_Y, vy: 0,
-             lives: 3, score: 0, fireDelay: 0, rate: 10, angle: 1, angleDelay: 0, dead: 0, inv: 0, w: 28, h: 12 };
+             lives: 3, score: 0, fireDelay: 0, rate: 10, angle: 1, angleDelay: 0, dead: 0, inv: 0, power: 0 };
   }
 
   function fire(x, y, angle, from) {
@@ -92,6 +101,7 @@ SW.game = (function () {
       if (--p.fireDelay < 0) {
         p.fireDelay = p.rate;
         fire(p.x + 8, p.y + 2, 0, p);
+        if (p.power) fire(p.x + 8, p.y - 4, 0, p);           // power-up: second shot ($6F44A)
         fire(p.x + 3, p.y - 1, 32, p);
       }
     } else p.fireDelay = 0;
@@ -99,7 +109,7 @@ SW.game = (function () {
 
   function updateJeep(p, input) {
     // from the disassembly ($6EFB8, $6F386): up without fire = jump,
-    // fire + up/down = turn the gun (1..16) while on the ground
+    // fire + up/down = turn the gun (0..16) while on the ground
     if (!(input & I.FIRE) && (input & I.UP)) input = (input | I.JUMP) & ~(I.UP | I.DOWN);
     const onGround = p.y >= GROUND_Y;
     if (onGround && (input & (I.UP | I.DOWN))) {
@@ -121,6 +131,7 @@ SW.game = (function () {
       if (--p.fireDelay < 0) {
         p.fireDelay = p.rate;
         fire(p.x - 8, p.y - 5, -p.angle * 8, p);
+        if (p.power) fire(p.x - 8, p.y - 5, -(p.angle - 1) * 8, p);   // power-up ($6F3F6)
         if (p.y < 0x96) fire(p.x + 3, p.y - 1, 32, p);    // extra shot while airborne
       }
     } else p.fireDelay = 0;
@@ -134,88 +145,12 @@ SW.game = (function () {
     const base = p.tilt < 0 ? 3 : p.tilt > 0 ? 1 : 0;
     return base + ((frame >> 1) & 1 ? 4 : 0);              // rotor: poses 0-3 / 4-7
   }
+  const playerSprite = (p) => (p.kind === "heli" ? heliSprite(p) : jeepSprite(p));
 
   function killPlayer(p) {
     if (p.dead || p.inv > 0) return;
     booms.push({ x: p.x, y: p.y, f: 0 });
-    p.dead = 1; p.lives--;
-  }
-
-  // ---------------------------------------------------------------- enemies
-
-  function hint(addr) {
-    const h = HINTS[addr];
-    if (!h) return null;
-    let frames = h.frames[level];
-    if (!frames) { const any = Object.values(h.frames)[0]; frames = any || null; }
-    return { ...h, frames };
-  }
-
-  function spawnWave(w) {
-    const h = hint(w.addr);
-    if (!h || !h.frames) return;
-    if (BOSSES.has(w.addr)) {
-      enemies.push({ boss: true, x: 380, y: 70, vx: -1, vy: 0, frames: h.frames, hp: 60, maxHp: 60, t: 0, score: 5000 });
-      return;
-    }
-    const ground = h.y !== null && h.y >= 0x78;
-    for (let i = 0; i < Math.min(h.count, 16); i++) {
-      if (ground) {
-        enemies.push({ ground: true, x: (h.x || 336) + i * 40, y: h.y, vx: -0.5, vy: 0, frames: h.frames,
-                       hp: 3, t: -i * 30, score: 300 });
-      } else {
-        // like $6E5AA: come in from the side away from the players
-        const fromLeft = avgPlayerX() > 0xa0;
-        enemies.push({ x: fromLeft ? -20 - i * 24 : 340 + i * 24, y: 32 + rand(80),
-                       vx: (fromLeft ? 1 : -1) * (1.5 + rand(10) / 10), vy: 0, frames: h.frames,
-                       hp: 1, t: rand(64), score: 100, wob: 0.5 + rand(10) / 10 });
-      }
-    }
-  }
-
-  function avgPlayerX() {
-    const live = players.filter((p) => p.joined && !p.dead);
-    return live.length ? live.reduce((s, p) => s + p.x, 0) / live.length : 160;
-  }
-  function nearestPlayer(x, y) {
-    let best = null, bd = 1e9;
-    for (const p of players) {
-      if (!p.joined || p.dead) continue;
-      const d = (p.x - x) ** 2 + (p.y - y) ** 2;
-      if (d < bd) { bd = d; best = p; }
-    }
-    return best;
-  }
-  function enemyFire(e, speed) {
-    const p = nearestPlayer(e.x, e.y);
-    if (!p) return;
-    const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1;
-    enemyShots.push({ x: e.x, y: e.y, vx: dx / d * speed, vy: dy / d * speed });
-  }
-
-  function updateEnemy(e, scrolling) {
-    e.t++;
-    if (e.boss) {
-      if (e.x > 250) e.x += e.vx; else e.y = 70 + Math.sin(e.t / 40) * 35;
-      if (e.t % 50 === 0) for (let k = -1; k <= 1; k++) {
-        enemyFire(e, 2.2);
-        const s = enemyShots[enemyShots.length - 1];
-        if (s) { s.vy += k * 0.6; }
-      }
-      return true;
-    }
-    if (e.ground) {
-      if (e.t < 0) return true;
-      // units placed above the road drop onto it (approximation)
-      if (e.y < 0x9A) { e.vy += 0.15; e.y = Math.min(0x9A, e.y + e.vy); }
-      e.x += e.vx - (scrolling ? 1 : 0);
-      if (e.t % 90 === 45 && e.x < 320) enemyFire(e, 1.6);
-      return e.x > -48;
-    }
-    e.x += e.vx;
-    e.y += Math.sin(e.t / 12) * e.wob;
-    if (e.t % 110 === 60 && e.x > 0 && e.x < 320) enemyFire(e, 1.8);
-    return e.x > -60 && e.x < 380;
+    p.dead = 1; p.lives--; p.power = 0;
   }
 
   // ---------------------------------------------------------------- scenery
@@ -229,16 +164,41 @@ SW.game = (function () {
     else if (w) scenery.objs.push({ wx: scroll + 0x150, spr: w });
   }
 
-  // ---------------------------------------------------------------- frame
+  // ---------------------------------------------------------------- collisions
 
-  function box(spriteIdx, x, y) {
-    const s = SW.gfx.sprite(spriteIdx);
+  // Boxes in object coordinates (sprites are drawn 15 px higher, like sub_712AA).
+  function spriteBox(i, x, y) {
+    const s = SW.gfx.sprite(i);
     if (!s) return { l: x - 8, r: x + 8, t: y - 8, b: y + 8 };
-    const l = x - s.hx, t = y - 15 - s.hy;
+    const l = x - s.hx, t = y - s.hy;
     return { l: l + 3, r: l + s.w - 3, t: t + 2, b: t + s.h - 2 };
   }
+  function enemyBox(e) {
+    if (e.hw && e.hh) return { l: e.x - e.hw, r: e.x + e.hw, t: e.y - e.hh, b: e.y + e.hh };
+    if (e.spr < 0 || e.spr >= 400) return { l: e.x - 4, r: e.x + 4, t: e.y - 4, b: e.y + 4 };
+    const b = spriteBox(e.spr, e.x, e.y);
+    if (e.hh) { b.t = e.y - e.hh; b.b = e.y + e.hh; }
+    return b;
+  }
   const hit = (a, b) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
-  function enemySprite(e) { return e.frames[(e.t >> 3) % e.frames.length]; }
+
+  function destroy(e, shooter) {
+    if (shooter) shooter.score += e.score * 100;
+    booms.push({ x: e.x, y: e.y, f: 0 });
+    if (e.kind === "boss") for (let k = 0; k < 6; k++) booms.push({ x: e.x + rand(40) - 20, y: e.y + rand(30) - 15, f: -k * 5 });
+    if (e.onDeath) e.onDeath(e);
+    if (e.wreck != null) {
+      // $6FA58: becomes a wreck that keeps moving with the ground
+      e.kind = "wreck"; e.shootable = false; e.touchKills = false; e.turret = null;
+      e.vx = e.ax = e.ay = e.vy = 0; e.ground = true;
+      E.setAnim(e, [e.wreck], 2, true);
+      e.script = (function* (o) {
+        while (o.x > -64) { o.x -= world.scrollDelta; yield; }
+      })(e);
+    } else e.alive = false;
+  }
+
+  // ---------------------------------------------------------------- frame
 
   function step() {
     frame++;
@@ -261,14 +221,16 @@ SW.game = (function () {
     // late joiners
     players.forEach((p, i) => { if (!p.joined && inputs[i] & I.FIRE && p.lives > 0) { p.joined = true; p.inv = 100; } });
 
-    const bossAlive = enemies.some((e) => e.boss);
+    const bossAlive = enemies.some((e) => e.kind === "boss" && e.alive);
     const lastT = waves.length ? waves[waves.length - 1].t : LEVEL_LEN;
     const scrolling = !(clock >= lastT && bossAlive) && clock < lastT + 400;
+    world.scrollDelta = scrolling ? 1 : 0;
+    world.players = players;
     if (scrolling) {
       scroll++; clock++;
       if (scroll % 32 === 0) stepScenery();
     }
-    while (waveIdx < waves.length && waves[waveIdx].t <= clock) spawnWave(waves[waveIdx++]);
+    while (waveIdx < waves.length && waves[waveIdx].t <= clock) E.wave(waves[waveIdx++].addr);
 
     players.forEach((p, i) => {
       if (!p.joined) return;
@@ -287,44 +249,53 @@ SW.game = (function () {
       s.x += s.vx; s.y += s.vy;
       return s.y < SHOT_FLOOR && s.x > -16 && s.x < 336 && s.y > -16;
     });
-    enemyShots = enemyShots.filter((s) => {
-      s.x += s.vx; s.y += s.vy;
-      return s.y < 170 && s.x > -16 && s.x < 336 && s.y > -16;
-    });
-    enemies = enemies.filter((e) => updateEnemy(e, scrolling));
 
-    // collisions
+    // run every enemy task one frame (new ones spawned this frame run next frame)
+    for (const e of enemies.slice()) {
+      if (!e.alive) continue;
+      if (e.script.next().done) e.alive = false;
+    }
+
+    // player shots vs enemies
     for (const e of enemies) {
-      if (e.t < 0) continue;
-      const eb = box(enemySprite(e), e.x, e.y);
+      if (!e.alive || !e.shootable) continue;
+      const eb = enemyBox(e);
+      const tb = e.turret ? { l: e.x - 8, r: e.x + 8, t: 0x82 - 8, b: 0x82 + 4 } : null;
       for (const s of shots) {
-        if (s.dead || !hit(eb, { l: s.x - 2, r: s.x + 2, t: s.y - 2, b: s.y + 2 })) continue;
+        if (s.dead) continue;
+        const sb = { l: s.x - 2, r: s.x + 2, t: s.y - 2, b: s.y + 2 };
+        if (!hit(eb, sb) && !(tb && hit(tb, sb))) continue;
         s.dead = true;
-        if (--e.hp <= 0 && !e.dead) {
-          e.dead = true; s.from.score += e.score;
-          booms.push({ x: e.x, y: e.y, f: 0 });
-          if (e.boss) for (let k = 0; k < 6; k++) booms.push({ x: e.x + rand(40) - 20, y: e.y + rand(30) - 15, f: -k * 5 });
-        }
-      }
-      for (const p of players) {
-        if (!p.joined || p.dead || e.dead) continue;
-        const pb = box(p.kind === "heli" ? heliSprite(p) : jeepSprite(p), p.x, p.y);
-        if ((p.kind === "heli") !== !!e.ground || e.boss) if (hit(pb, eb)) killPlayer(p);
+        e.hp--;
+        if (e.onHit) e.onHit(e);
+        if (e.hp <= 0) { destroy(e, s.from); break; }
       }
     }
     shots = shots.filter((s) => !s.dead);
-    enemies = enemies.filter((e) => !e.dead);
-    for (const s of enemyShots) for (const p of players) {
+
+    // enemies and their shots vs players
+    for (const p of players) {
       if (!p.joined || p.dead) continue;
-      const pb = box(p.kind === "heli" ? heliSprite(p) : jeepSprite(p), p.x, p.y);
-      if (hit(pb, { l: s.x - 2, r: s.x + 2, t: s.y - 2, b: s.y + 2 })) { s.dead = true; killPlayer(p); }
+      const pb = spriteBox(playerSprite(p), p.x, p.y);
+      for (const e of enemies) {
+        if (!e.alive || e.kind === "controller" || e.kind === "wreck") continue;
+        if (!hit(pb, enemyBox(e))) continue;
+        if (e.kind === "powerup") {
+          e.alive = false; p.power = 1; p.inv = Math.max(p.inv, 500); p.score += 1000;
+        } else if (e.touchKills) {
+          killPlayer(p);
+          if (e.kind === "shot" || e.kind === "missile" || e.kind === "bomb") e.alive = false;
+        }
+      }
     }
-    enemyShots = enemyShots.filter((s) => !s.dead);
+
+    for (let i = enemies.length - 1; i >= 0; i--) if (!enemies[i].alive) enemies.splice(i, 1);
     booms = booms.filter((b) => ++b.f < 40);
+    if (world.flash > 0) world.flash--;
 
     if (banner > 0) banner--;
     if (!players.some((p) => p.joined || p.dead)) { state = "over"; return; }
-    if (clock >= lastT && !enemies.some((e) => e.boss) && waveIdx >= waves.length) {
+    if (clock >= lastT && !enemies.some((e) => e.kind === "boss") && waveIdx >= waves.length) {
       if (++endTimer > 200) {
         if (level >= 11) state = "end";
         else startLevel(level + 1);
@@ -346,6 +317,24 @@ SW.game = (function () {
     ctx.fillStyle = colour || "#fff"; ctx.fillText(str, x, y);
   }
 
+  function drawEnemy(e) {
+    if (e.kind === "controller") return;
+    if (e.kind === "shot") {
+      ctx.fillStyle = "#ff5040";
+      ctx.fillRect(Math.round(e.x) - 1, Math.round(e.y) - 16, 3, 3);
+      return;
+    }
+    if (e.kind === "missile") {   // hardware sprite $210+: drawn as a line along its heading
+      const a = (e.angle || 0) * Math.PI / 128, x = e.x, y = e.y - 15;
+      ctx.strokeStyle = "#ffd0a0"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x - Math.cos(a) * 4, y - Math.sin(a) * 4); ctx.lineTo(x + Math.cos(a) * 4, y + Math.sin(a) * 4); ctx.stroke();
+      ctx.fillStyle = "#ff8030"; ctx.fillRect(Math.round(x - Math.cos(a) * 5) - 1, Math.round(y - Math.sin(a) * 5) - 1, 2, 2);
+      return;
+    }
+    if (e.turret) drawSprite(e.turret, e.x, 0x82);
+    if (e.spr >= 0 && e.spr < 400) drawSprite(e.spr, e.x, e.y);
+  }
+
   function draw() {
     const [r, g, b] = lv.sky;
     ctx.fillStyle = `rgb(${r},${g},${b})`;
@@ -361,18 +350,17 @@ SW.game = (function () {
     scenery.objs = scenery.objs.filter((o) => o.wx - scroll > -64);
     for (const o of scenery.objs) drawSprite(o.spr, o.wx - scroll, 0x90);
 
-    for (const e of enemies) if (e.ground && e.t >= 0) drawSprite(enemySprite(e), e.x, e.y);
+    for (const e of enemies) if (e.ground && e.kind !== "missile") drawEnemy(e);
     for (const p of players) {
       if (!p.joined || p.dead || (p.inv > 0 && frame & 4)) continue;
-      drawSprite(p.kind === "heli" ? heliSprite(p) : jeepSprite(p), p.x, p.y);
+      drawSprite(playerSprite(p), p.x, p.y);
     }
-    for (const e of enemies) if (!e.ground) drawSprite(enemySprite(e), e.x, e.y);
+    for (const e of enemies) if (!e.ground || e.kind === "missile") drawEnemy(e);
 
     ctx.fillStyle = "#ffe066";
-    for (const s of shots) ctx.fillRect(Math.round(s.x) - 2, Math.round(s.y) - 15 - 1, 4, 2);
-    ctx.fillStyle = "#ff5040";
-    for (const s of enemyShots) ctx.fillRect(Math.round(s.x) - 1, Math.round(s.y) - 15 - 1, 3, 3);
-    for (const bm of booms) if (bm.f >= 0) drawSprite(EXPLOSION[Math.min(4, bm.f >> 3)], bm.x, bm.y);
+    for (const s of shots) ctx.fillRect(Math.round(s.x) - 2, Math.round(s.y) - 16, 4, 2);
+    for (const bm of booms) if (bm.f >= 0) drawSprite(E.EXPLOSION[Math.min(4, bm.f >> 3)], bm.x, bm.y);
+    if (world.flash > 0) { ctx.fillStyle = `rgba(255,255,220,${world.flash / 40})`; ctx.fillRect(0, 0, W, 168); }
 
     // HUD
     ctx.fillStyle = "#000";
@@ -382,13 +370,13 @@ SW.game = (function () {
       const name = p.kind === "heli" ? "HELI" : "JEEP";
       if (p.joined || p.dead) {
         text(`${name}  ${String(p.score).padStart(7, "0")}`, x, 180, i ? "#9fe0ff" : "#ffd27f", al);
-        text("♥".repeat(Math.max(0, p.lives)), x, 192, "#ff7070", al);
+        text("♥".repeat(Math.max(0, p.lives)) + (p.power ? "  ★" : ""), x, 192, "#ff7070", al);
       } else if (p.lives > 0) {
         text(`${name}: PRESS FIRE`, x, 186, frame & 32 ? "#888" : "#ccc", al);
       }
     });
     text(`LEVEL ${level}`, 160, 186, "#fff", "center");
-    const boss = enemies.find((e) => e.boss);
+    const boss = enemies.find((e) => e.kind === "boss");
     if (boss) {
       ctx.fillStyle = "#400"; ctx.fillRect(110, 192, 100, 4);
       ctx.fillStyle = "#f44"; ctx.fillRect(110, 192, 100 * boss.hp / boss.maxHp, 4);
@@ -413,5 +401,12 @@ SW.game = (function () {
     if (paused) text("PAUSED", 160, 80, "#fff", "center");
   }
 
-  return { init, step, draw, W, H };
+  // debugging: counts of waves by whether their behaviour is decoded
+  function stats() {
+    let d = 0;
+    for (const w of waves) if (E.decoded(w.addr)) d++;
+    return { level, waves: waves.length, decoded: d, enemies: enemies.length, clock };
+  }
+
+  return { init, step, draw, stats, W, H };
 })();

@@ -13,6 +13,10 @@ import capstone
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from dis68k import note  # noqa: E402
 
+# calls followed by inline data: words up to and including the first negative one
+# (sub_6C8DA: animation list; code resumes after it)
+INLINE_DATA_CALLS = {0x6C8DA}
+
 BRANCH = re.compile(r"^(b(ra|sr|hi|ls|cc|cs|ne|eq|vc|vs|pl|mi|ge|lt|gt|le)|db\w+)")
 STOP = {"rts", "rte", "rtr", "bra", "jmp", "illegal", "stop"}
 
@@ -108,6 +112,10 @@ def trace_from(work, md, mem, lo, hi, code, labels, xrefs, hw):
             if ins.mnemonic.split(".")[0] in STOP:
                 break
             pc += ins.size
+            if t in INLINE_DATA_CALLS:
+                while pc + 2 <= hi and mem[pc] < 0x80:
+                    pc += 2
+                pc += 2
 
 
 def write_listing(out, entries, mem, lo, hi, code, labels, xrefs):

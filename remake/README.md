@@ -44,10 +44,14 @@ From the disassembly (see `../Research/NOTES.md`):
 - the wave schedule of every level, the level length and the boss at the end
 - helicopter and jeep movement, bounds, the jeep's jump (−3 px/frame, gravity
   0.125) and gun angles, fire rate and shot directions
+- enemy behaviour for 59 % of all waves (`js/enemies.js`): mines, tanks,
+  missile launchers with homing missiles, helicopter groups, walkers with
+  turrets, AA guns, power-ups, wrecks, scores and the screen flash
 
 Approximated for now:
-- enemy movement, firing, hit points and scores (one generic flying and one
-  ground behaviour, using each enemy's real sprites)
+- the remaining enemy types (41 % of waves, mostly levels 4, 5, 6 and 11) use a
+  generic flying or ground behaviour with their real sprites
 - bosses (one sprite piece, not the full multi-part boss)
-- bullets are drawn as simple shapes (their hardware-sprite graphics aren't
-  extracted yet), no power-ups, no sound, simple HUD
+- power-up effect (shield + double shot) and the bonus carrier
+- bullets and missiles are drawn as simple shapes (their hardware-sprite
+  graphics aren't extracted yet), no sound, simple HUD
