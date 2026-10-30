@@ -242,6 +242,15 @@ Object fields seen so far: `(a5)` X and `4(a5)` Y (16.16), `$14`/`$18` velocity,
 | `sub_6FC32` | pick a target: a live player, else (160, 150) |
 | `loc_6FADA` | spawn `d0` children of `a0`, `d1` frames apart |
 
+**Hit points = field `$20`.** `sub_6CA34` decrements it for each player shot
+that overlaps the object and only calls the hit handler when it reaches 0.
+Spawned objects default to `$20 = 1`, hitbox ±12 and the default handlers
+(`sub_6C660`); routines that clear `$20` (drones, the emplacement) or set
+`$FFFF` (the large ground vehicle) are effectively unkillable. Values used:
+blimp 8, rear vehicle 8, tank 6, floating pod 6, seeker 4, armoured vehicle 4,
+paratrooper vehicle 4, launcher / AA gun / walker turret / dasher 3,
+descender / sinker 2, most others 1.
+
 Collision (`sub_6CAFE`): flags `$3B` pick checks, hitbox half-size `$1C`/`$1E`:
 bit 0 player shot → handler `$3C`; bit 1 player vehicle → `$40`; bit 3 → `$44`;
 bit 4 level end → `$48`; bit 2 blitter collision → `$4C`. Common handlers:
@@ -313,8 +322,7 @@ The last families — **every one of the 604 waves now has its own behaviour**:
 | `6DDAA`, `6E02E`, `6E552`, `6DE62`, `6ECD6` | other group sizes of the sinker column, floating pod, helicopter, descender and dasher families | |
 
 Partly approximated: the tails of `6EB90`, `6FC9C`, `6D8A0` (marked above),
-the swirling planes' loop speed, the carrier's part layout, and boss B's rear
-part taking hits.
+the swirling planes' loop speed and boss B's rear part taking hits.
 
 **Projectiles**: `loc_707C0` missiles/shells: 2.5 px/frame, hitbox ±8, fly
 `d0` frames as fired (shell: straight up with extra upward acceleration), then
@@ -335,20 +343,33 @@ timer, `$8` blink/invulnerability timer, `$A` double shot, `$C` speed,
   into 300 frames (`$12C`) during which the hit flag is cleared every frame,
   with an orb (`$6F680`, sprites 34/35) following the player; then
   `$8 = 100` frames of blinking invulnerability.
-  **Shooting it 18 times** (`$6F92C`, sprites 36/37 from 3 hits left) makes it
+  **Picking up another one while shielded** (`$6F94E` tests `$6`), or
+  **shooting it 18 times** (`$6F92C`, sprites 36/37 from 3 hits left), makes it
   a smart bomb (`$6F6B6`): explosion, white flash, and one frame of the
-  vehicle-collision flag `-$67A0` for whoever shot it, which destroys
-  everything on screen.
+  vehicle-collision flag `-$67A0` for that player, which hits everything on
+  screen. While shielded, the player also rams enemies: `sub_6CA70` takes 1
+  hit point from anything touching them every 4th frame.
 - **Kill counter** (`sub_6FA8A`, on every scored kill unless a boss or a
   carrier is out): starts at 32 (`-$7EAE`), then reloads from `-$7EAC`
   (64, +8 per carrier, up to 104). At zero it sets `-$7FBE` (halves group
   sizes in `sub_6FACC`) and spawns the carrier.
-- **Bonus carrier** (`$6FE20`, sprites 280/281): flies to (250, 64), gathers 4
-  parts (`$7002E`, `$70086`, `$700E6`, `$7013E`, sprites 290–293; their exact
-  layout, `sub_70212`, isn't decoded) 50 frames apart, waits 250 frames,
-  then becomes shootable (16 hits, `$6FF54` makes the parts recoil) and
-  hunts like the gunship, with a small chance each frame (500/65536) of a
-  bomb + missile + aimed shots.
+- **Bonus carrier** (`$6FE20`), spawned at the position of the triggering
+  kill: the core (280/281) flies to (250, 64) (x at 2 px/frame, then y at 1),
+  then four parts are launched 50 frames apart. Each (`sub_70212`) starts at
+  (dx + 352, dy + 30), flies left at 2 px/frame for 78 frames, curves
+  (angle −8 every 5 frames, 25 times) and docks at (dx, dy) from the core:
+
+  | Part | Dock | Sprites |
+  |---|---|---|
+  | `$7002E` | (0, +5) | 290/291, then 293 |
+  | `$70086` | (−8, 0) | 294/295, then 296 (shootable while flying in, 24 hits → kills the carrier) |
+  | `$700E6` | (−9, −1) | 304/306, then 300/302 (two-piece) |
+  | `$7013E` | (−39, +7) | 282/283, then 285; tilts 285→287 (−4 px a step) while the core isn't descending, back to 284 when it is |
+
+  Assembled it's a large helicopter. After 250 frames the core becomes
+  shootable (16 hits, `$6FF54` re-arms `$20` each hit and makes the parts
+  recoil) and hunts like the gunship, with a small chance each frame
+  (500/65536) of a bomb + missile + aimed shots.
 - **Rewards** (`$6FFAC` → `$6FFD8`): one icon per living player, drifting
   left at 0.25 and homing to y 80 (helicopter) or 118 (jeep); only its owner
   can take it (`$64` vs `-$7E36`). In order: **double shot** (icon 30,

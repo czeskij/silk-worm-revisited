@@ -17,6 +17,9 @@ SW.enemies = (function () {
 
   // ---------------------------------------------------------------- objects
 
+  // hp = field $20: hits before the hit handler runs (sub_6CA34). Spawned
+  // objects default to 1 (sub_6C660); a routine clearing it makes the object
+  // effectively unkillable.
   function obj(props) {
     return Object.assign({
       x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, ground: false,
@@ -131,7 +134,7 @@ SW.enemies = (function () {
   // $6D6C8 / $6D6C0 / $6D6AC: tank. Level 1: passive. Later: fires a shell at
   // intervals of (11 - level) * 8 + 10 frames while it's right of x = 50.
   function tank(y) {
-    const e = obj({ x: 0x15e, y, ground: true, hw: 18, hh: 10, score: 6, wreck: 166 });
+    const e = obj({ x: 0x15e, y, ground: true, hw: 18, hh: 10, hp: 6, score: 6, wreck: 166 });
     setAnim(e, [162]);
     return spawn(e, function* (e) {
       if (W.level === 1) { yield* drift(e); return; }
@@ -149,7 +152,7 @@ SW.enemies = (function () {
 
   // $6D7A2 / $6D79A / $6D78C: missile launcher: 4 missiles `gap` frames apart, rest 50.
   function launcher(y, gap) {
-    const e = obj({ x: 0x14f, y, ground: true, score: 3, wreck: 172 });
+    const e = obj({ x: 0x14f, y, ground: true, hp: 3, score: 3, wreck: 172 });
     setAnim(e, [170]);
     return spawn(e, function* (e) {
       while (true) {
@@ -238,7 +241,7 @@ SW.enemies = (function () {
     });
   }
   function walker() {
-    const e = obj({ x: 0x14f, y: 0x8e, ground: true, score: 3, wreck: 128, turret: 123 });
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, hp: 3, score: 3, wreck: 128, turret: 123 });
     setAnim(e, [124, 125, 126, 127], 0x25);
     return spawn(e, function* (e) {
       let gun = 0x32;
@@ -258,7 +261,7 @@ SW.enemies = (function () {
   // shuffles left/right until the helicopter is on its firing line
   // (x - heliX = (y - heliY) * 32 / 14), then fires a burst every 30 frames.
   function aaGun() {
-    const e = obj({ x: 0x14f, y: 0x8e, vx: -0.5, ground: true, score: 3, wreck: 122 });
+    const e = obj({ x: 0x14f, y: 0x8e, vx: -0.5, ground: true, hp: 3, score: 3, wreck: 122 });
     setAnim(e, [120], 2, true);
     return spawn(e, function* (e) {
       if (W.level === 1) { yield* drift(e); return; }
@@ -301,7 +304,7 @@ SW.enemies = (function () {
 
   // $6EA48 / $6EA40: floating pod (106-109): every 100 frames a ring of 8 shots.
   function floater(y) {
-    const e = obj({ x: 0x14f, y: y == null ? 0x20 + W.rand(64) : y, vx: -0.75, score: 6 });
+    const e = obj({ x: 0x14f, y: y == null ? 0x20 + W.rand(64) : y, vx: -0.75, hp: 6, score: 6 });
     setAnim(e, [106, 107, 108, 109]);
     return spawn(e, function* (e) {
       while (!offscreen(e)) {
@@ -407,7 +410,7 @@ SW.enemies = (function () {
     });
   }
   function seeker(x, y) {
-    const e = obj({ x, y, score: 4 });
+    const e = obj({ x, y, hp: 4, score: 4 });
     setAnim(e, [288, 289]);
     const t = target();
     let speed = 0x320, angle = 0x80;
@@ -427,7 +430,7 @@ SW.enemies = (function () {
   // $6EACE (groups $6EABE / $6EAC2): blimp (83/84), drifts left at 0.25 and
   // zig-zags vertically between y 64 and 134.
   function blimp() {
-    const e = obj({ x: 0x14f, y: 0x20 + W.rand(64), vx: -0.25, score: 8 });
+    const e = obj({ x: 0x14f, y: 0x20 + W.rand(64), vx: -0.25, hp: 8, score: 8 });
     setAnim(e, [83, 84], 4);
     e.vy = W.rand(2) ? 0.5 : -0.5;
     return spawn(e, function* (e) {
@@ -506,7 +509,7 @@ SW.enemies = (function () {
   // $6DE6E (groups $6DE5A x2 / $6DE5E x4, 40 frames apart): descender (104/105).
   // Sinks from the top, slows, then climbs away, firing (first after 100 frames).
   function descender() {
-    const e = obj({ x: 0x94 + W.rand(64), y: 0, vx: -0x3000 / 65536, vy: 0x3000 / 65536, score: 2 });
+    const e = obj({ x: 0x94 + W.rand(64), y: 0, vx: -0x3000 / 65536, vy: 0x3000 / 65536, hp: 2, score: 2 });
     setAnim(e, [104, 105]);
     const hook = fireHook(100);
     return spawn(e, function* (e) {
@@ -541,7 +544,7 @@ SW.enemies = (function () {
   function column(count) {
     let y = 0x28;
     return group(count, 8, () => {
-      const e = obj({ x: 0x166, y, vx: -0x2000 / 65536, vy: 0.5, score: 2 });
+      const e = obj({ x: 0x166, y, vx: -0x2000 / 65536, vy: 0.5, hp: 2, score: 2 });
       setAnim(e, [110, 112]);
       spawn(e, drift);
       y += 0x12;
@@ -566,7 +569,7 @@ SW.enemies = (function () {
   // $6ECE6 (groups $6FCEE x4 / $6ECDA x3): dasher (114/115) at y 40: cruises
   // at -1 for 100 frames, then dashes at -5 (116/117) firing every 5 frames.
   function dasher() {
-    const e = obj({ x: 0x14f, y: 0x28, vx: -1, score: 3 });
+    const e = obj({ x: 0x14f, y: 0x28, vx: -1, hp: 3, score: 3 });
     setAnim(e, [114, 115]);
     return spawn(e, function* (e) {
       yield* move(e, 100);
@@ -596,7 +599,7 @@ SW.enemies = (function () {
   function paratrooper() {
     const chute = obj({ x: 0x60 + W.rand(128), y: -32, vy: 1, score: 1, touchKills: false });
     setAnim(chute, [150, 151], 0x18);
-    const truck = obj({ x: chute.x, y: chute.y + 17, score: 4 });
+    const truck = obj({ x: chute.x, y: chute.y + 17, hp: 4, score: 4 });
     setAnim(truck, [154, 155]);
     spawn(chute, function* (c) {
       while (truck.alive && truck.y < 0x90) { physics(c); yield; }
@@ -676,7 +679,7 @@ SW.enemies = (function () {
 
   // $6DA66: vehicle (137/138, wreck 139) entering from the left at +0.5.
   function rearVehicle() {
-    const e = obj({ x: -15, y: 0x8e, vx: 0.5, score: 8, wreck: 139 });
+    const e = obj({ x: -15, y: 0x8e, vx: 0.5, hp: 8, score: 8, wreck: 139 });
     setAnim(e, [137, 138], 4);
     return spawn(e, drift);
   }
@@ -699,7 +702,7 @@ SW.enemies = (function () {
   // $6FC9C: large ground vehicle (156-158 + 159): waits 80 frames, then keeps
   // pace with the scroll (+1) for a while (the rest is approximate).
   function bigVehicle() {
-    const e = obj({ x: 0x14f, y: 0x8e, ground: true, score: 6 });
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, score: 6, invulnerable: true });   // $20 = $FFFF
     setAnim(e, [156, 157, 158]);
     return spawn(e, function* (e) {
       yield* move(e, 0x50);
@@ -713,7 +716,7 @@ SW.enemies = (function () {
   // $6D8A0: ground emplacement (230-233, hitbox 16) launching a linked child
   // ($6D902, not decoded: aimed shots here).
   function emplacement() {
-    const e = obj({ x: 0x14f, y: 0x8e, ground: true, hw: 16, hh: 16, score: 3 });
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, hw: 16, hh: 16, score: 3, invulnerable: true });   // $20 = 0
     setAnim(e, [230, 231, 232, 233], 0x20);
     return spawn(e, function* (e) {
       while (!offscreen(e)) { yield* move(e, 60); if (!offscreen(e)) aimedShot(e.x - 1, e.y - 8); }
@@ -724,7 +727,7 @@ SW.enemies = (function () {
   // +0.75 against the scroll, wreck 145 (two pieces), score 4.
   function armoured() {
     const h = HINTS["6D21E"];
-    const e = obj({ x: 0x14f, y: 0x8e, ground: true, vx: 0.75, score: 4, wreck: 0x91 });
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, vx: 0.75, hp: 4, score: 4, wreck: 0x91 });
     setAnim(e, (h && Object.values(h.frames)[0]) || [140, 141], 4);
     return spawn(e, drift);
   }
@@ -743,41 +746,89 @@ SW.enemies = (function () {
     return spawn(e, drift);
   }
 
-  // $6FE20: bonus carrier. Arrives after enough kills (game.js counts them),
-  // flies to (250, 64), gathers 4 parts 50 frames apart, waits 250 frames,
-  // then hunts like the gunship boss and has 16 hits. Destroyed ($6FFAC):
-  // drops a reward icon for each living player ($6FFD8).
-  function carrier() {
-    const e = obj({ kind: "carrier", x: 0x150, y: 0x40, hp: 16, score: 5, shootable: false, touchKills: true });
+  // $6FE20: bonus carrier, spawned where the triggering kill happened.
+  // The core (280/281) flies to (250, 64); four parts fly in one by one, 50
+  // frames apart, and dock at fixed offsets; after 250 frames the core becomes
+  // shootable (16 hits, $6FF54 re-arms $20 each hit) and hunts like the
+  // gunship. Destroyed ($6FFAC): a reward icon for each living player ($6FFD8).
+  // Parts: [entry, dock dx, dy, flight animation, docked animation]
+  const CARRIER_PARTS = [
+    ["7002E", 0, 5, [290, 291], [293]],              // $7002E: 290/291, settles on 293
+    ["70086", -8, 0, [294, 295], [296]],             // $70086: 294/295, settles on 296
+    ["700E6", -9, -1, [304, 306], [300, 302]],       // $700E6: 304/306, then 300/302 (two-piece)
+    ["7013E", -39, 7, [282, 283], [285]],            // $7013E: 282/283, settles on 285, then tilts
+  ];
+  function carrier(x, y) {
+    const e = obj({ kind: "carrier", x: x == null ? 0x150 : x, y: y == null ? 0x40 : y,
+                    hp: 16, score: 5, shootable: false, touchKills: true });
     setAnim(e, [280, 281]);
-    e.parts = [];
     e.onDeath = (e) => {
       W.bonusActive = false;
       for (const p of W.players) if (p.joined && !p.dead) reward(e.x, e.y, p);
     };
     return spawn(e, function* (e) {
-      // approach (250, 64) in two moves
-      let n = Math.abs(0xfa - e.x) >> 1;
+      let n = Math.abs(0xfa - e.x) >> 1;               // to x 250 at 2 px/frame
       e.vx = 0xfa > e.x ? 2 : -2;
       yield* move(e, n); e.vx = 0;
-      n = Math.abs(0x40 - e.y);
+      n = Math.abs(Math.round(0x40 - e.y));            // then to y 64 at 1 px/frame
       e.vy = 0x40 > e.y ? 1 : -1;
-      yield* move(e, n); e.vy = 0;
-      // gather 4 parts (positions approximate: sub_70212 not decoded)
-      for (const [dx, dy] of [[0, 5], [-16, -8], [16, -8], [0, -18]]) {
-        e.parts.push({ dx, dy });
+      yield* move(e, n); e.vy = 0; e.y = 0x40;
+      for (const def of CARRIER_PARTS) {
+        carrierPart(e, def);
         yield* move(e, 0x32);
       }
       yield* move(e, 0xfa);
       e.shootable = true;
+      e.vx = 1;
       while (true) {
         if (W.rand(65536) < 0x1f4) { bomb(e.x, e.y); missile(e.x, e.y + 20, 0x80, 25, 12); aimedAtEach(e.x, e.y); }
-        e.ax = e.x < 0xa0 ? 0x800 / 65536 : e.x > 0x10e ? -0x800 / 65536 : 0;
+        e.ax = e.x < 0xa0 ? 0x800 / 65536 : e.x > 0x10e ? -0x800 / 65536 : 0;    // sub_706DA
         const h = W.players.find((p) => p.kind === "heli" && p.joined && !p.dead);
-        const ty = Math.max(0x28, h ? h.y + 4 : 0x40);
+        const j = W.players.find((p) => p.kind === "jeep" && p.joined && !p.dead);
+        let ty = h ? h.y + 4 : j ? Math.floor(j.x / 3) + 0x20 : 0x40;            // sub_7069C
+        ty = Math.max(0x28, ty);
         e.vy = ty > e.y ? 0.5 : ty < e.y ? -0.5 : 0;
         physics(e); yield;
       }
+    });
+  }
+
+  // sub_70212: a part starts at (dx + 352, dy + 30), flies left at 2 px/frame
+  // for 78 frames, then curves (angle -8 every 5 frames, 25 times) and docks
+  // at (dx, dy) from the core. The rear part ($7013E) then tilts with the
+  // core: 285 -> 287 while it isn't descending, back to 284 when it is.
+  function carrierPart(core, [entry, dx, dy, flight, docked]) {
+    const e = obj({ kind: "part", x: dx + 0x160, y: dy + 0x1e, shootable: false, touchKills: true });
+    setAnim(e, flight);
+    return spawn(e, function* (e) {
+      let angle = 0x80;
+      velocity(e, angle, 2);
+      yield* move(e, 0x4e);
+      for (let k = 0; k < 0x19; k++) {
+        angle = (angle - 8) & 255;
+        velocity(e, angle, 2);
+        yield* move(e, 5);
+      }
+      // ease into the docking point
+      for (let i = 10; i > 0 && core.alive; i--) {
+        e.x += (core.x + dx - e.x) / i; e.y += (core.y + dy - e.y) / i;
+        stepAnim(e); yield;
+      }
+      e.touchKills = false;
+      setAnim(e, docked);
+      let tilt = 0, t = 0;                           // rear part: 284..287, 4 px higher per step
+      while (core.alive && core.kind === "carrier") {
+        if (entry === "7013E" && ++t % 4 === 0) {
+          const up = core.vy <= 0;
+          if (up && tilt < 2) tilt++; else if (!up && tilt > -1) tilt--;
+          e.spr = 285 + tilt;
+        }
+        e.x = core.x + dx; e.y = core.y + dy - (entry === "7013E" ? 4 * tilt : 0);
+        if (entry !== "7013E") stepAnim(e);
+        e.blink = core.blink;
+        yield;
+      }
+      W.boom(e.x, e.y, W.rand(10));
     });
   }
 

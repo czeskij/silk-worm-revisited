@@ -54,10 +54,12 @@ From the disassembly (see `../Research/NOTES.md`):
   the screen flash and the screen clear
 - shots and missiles with their real hardware-sprite graphics, pointing the
   way they fly
-- the shield item (300 frames, or shoot it 18 times for a smart bomb) and the
-  bonus carrier that comes after enough kills and drops upgrades for each
-  player: double shot, then speed + rapid fire, then points + invulnerability
-  (upgrades are lost with a life)
+- enemy hit points as in the original (tanks take 6 hits, blimps 8, ...)
+- the shield item (300 frames, rams enemies it touches; a second pickup while
+  shielded, or 18 shots at it, sets off a smart bomb) and the bonus carrier: a
+  helicopter whose four parts fly in and dock, coming after enough kills and
+  dropping upgrades for each player: double shot, then speed + rapid fire,
+  then points + invulnerability (upgrades are lost with a life)
 - all three bosses: the gunship, the ground vehicle and the final boss, with
   their hit counts, movement and attack patterns; beating the final boss ends
   the game
@@ -67,6 +69,5 @@ Approximated for now:
   `../Research/NOTES.md`): what the transport plane drops, the large ground
   vehicle's later movement, the emplacement's projectile, the swirling planes'
   loop speed
-- the bonus carrier's four parts are placed approximately (their layout
-  isn't decoded); losing upgrades on death is assumed
+- losing upgrades on death is assumed
 - no sound, simple HUD

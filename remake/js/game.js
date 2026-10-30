@@ -209,19 +209,19 @@ SW.game = (function () {
   // (first after 32 kills, then 64, +8 each time up to 104), but not
   // during a boss fight or while a carrier is out.
   let killCounter = 0x20, killInterval = 0x40;
-  function countKill() {
+  function countKill(e) {
     if (world.stopScroll || world.bonusActive) return;
     if (--killCounter > 0) return;
     killCounter = killInterval;
     if (killInterval < 0x68) killInterval += 8;
     world.bonusActive = true;
-    E.carrier();
+    E.carrier(e.x, e.y);                                  // spawned where the kill happened
   }
 
   function destroy(e, shooter) {
     if (shooter) {
       shooter.score += e.score * 100;
-      if (e.kind !== "boss" && e.kind !== "carrier" && e.kind !== "powerup") countKill();
+      if (e.kind !== "boss" && e.kind !== "carrier" && e.kind !== "powerup") countKill(e);
     }
     booms.push({ x: e.x, y: e.y, f: 0 });
     if (e.kind === "boss") for (let k = 0; k < 6; k++) booms.push({ x: e.x + rand(40) - 20, y: e.y + rand(30) - 15, f: -k * 5 });
@@ -341,7 +341,16 @@ SW.game = (function () {
           else if (e.type === "speed") { p.speed = 1; p.rate = 5; }   // $6E36A: 3x speed, rapid fire
           else { p.score += 5000; p.inv += 200; }         // $6E388: points, invulnerability
         } else if (e.kind === "powerup") {
-          e.alive = false; p.shield = 300;                // $6F94E -> sub_6F520
+          e.alive = false;
+          // $6F94E: already shielded -> the smart bomb ($6F6B6), else a 300-frame shield
+          if (p.shield > 0) { world.destroyAll(); world.flash = 30; }
+          else p.shield = 300;
+        } else if (p.shield > 0 && e.shootable && !e.invulnerable && !e.background) {
+          // sub_6CA70: a shielded player rams enemies, 1 hit every 4 frames
+          if ((frame & 3) === 0) {
+            const t = e.forward || e;
+            if (--t.hp <= 0) destroy(t, p); else if (t.onHit) t.onHit(t);
+          }
         } else if (e.touchKills) {
           killPlayer(p);
           if (e.kind === "shot" || e.kind === "missile" || e.kind === "bomb") e.alive = false;
@@ -409,7 +418,6 @@ SW.game = (function () {
       ctx.restore();
       return;
     }
-    if (e.parts) for (const pt of e.parts) drawSprite(290 + ((frame >> 2) & 1), e.x + pt.dx, e.y + pt.dy);
     if (e.turret) drawSprite(e.turret, e.x, 0x82);
     if (e.spr >= 0 && e.spr < 400) drawSprite(e.spr, e.x, e.y);
   }
