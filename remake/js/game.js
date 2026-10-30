@@ -70,6 +70,7 @@ SW.game = (function () {
                            stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false, bonusActive: false,
                            groundOverride: new Map(),   // ground column index -> column number
                            boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }),
+                           mem, kill: (e, shooter) => destroy(e, shooter || null),
                            // $708A2: everything on screen counts as hit by a vehicle
                            destroyAll: () => {
                              for (const e of enemies.slice())
@@ -196,12 +197,10 @@ SW.game = (function () {
     }
     return box;
   }
+  // Enemy hitbox: +-$1C / +-$1E around the object (default 12, sub_6C660), as
+  // the collision routines (sub_6CA34 / sub_6CA70) test it.
   function enemyBox(e) {
-    if (e.hw && e.hh) return { l: e.x - e.hw, r: e.x + e.hw, t: e.y - e.hh, b: e.y + e.hh };
-    if (e.spr < 0 || e.spr >= 400) return { l: e.x - 4, r: e.x + 4, t: e.y - 4, b: e.y + 4 };
-    const b = spriteBox(e.spr, e.x, e.y);
-    if (e.hh) { b.t = e.y - e.hh; b.b = e.y + e.hh; }
-    return b;
+    return { l: e.x - e.hw, r: e.x + e.hw, t: e.y - e.hh, b: e.y + e.hh };
   }
   const hit = (a, b) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
 
@@ -502,7 +501,8 @@ SW.game = (function () {
                                             power: !!p.power, speed: !!p.speed, rate: p.rate, shield: p.shield || 0, score: p.score })),
              bonus: { killCounter, killInterval, active: world.bonusActive,
                       carrier: (enemies.find((e) => e.kind === "carrier") || {}).hp,
-                      pickups: enemies.filter((e) => e.kind === "pickup").map((e) => e.type) },
+                      pickups: enemies.filter((e) => e.kind === "pickup").map((e) => e.type),
+                      parts: enemies.filter((e) => e.kind === "part").map((e) => ({ spr: e.spr, x: Math.round(e.x), y: Math.round(e.y), rx: e.rx, ry: e.ry })) },
              boss: b && { x: Math.round(b.x), y: Math.round(b.y), hp: b.hp, spr: b.spr, shootable: b.shootable } };
   }
 

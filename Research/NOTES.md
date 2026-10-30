@@ -244,7 +244,7 @@ Object fields seen so far: `(a5)` X and `4(a5)` Y (16.16), `$14`/`$18` velocity,
 
 **Hit points = field `$20`.** `sub_6CA34` decrements it for each player shot
 that overlaps the object and only calls the hit handler when it reaches 0.
-Spawned objects default to `$20 = 1`, hitbox ±12 and the default handlers
+Spawned objects default to `$20 = 1`, **hitbox ±12** (the collision code tests ±`$1C`/±`$1E` around the object, not the sprite) and the default handlers
 (`sub_6C660`); routines that clear `$20` (drones, the emplacement) or set
 `$FFFF` (the large ground vehicle) are effectively unkillable. Values used:
 blimp 8, rear vehicle 8, tank 6, floating pod 6, seeker 4, armoured vehicle 4,
@@ -354,22 +354,36 @@ timer, `$8` blink/invulnerability timer, `$A` double shot, `$C` speed,
   (64, +8 per carrier, up to 104). At zero it sets `-$7FBE` (halves group
   sizes in `sub_6FACC`) and spawns the carrier.
 - **Bonus carrier** (`$6FE20`), spawned at the position of the triggering
-  kill: the core (280/281) flies to (250, 64) (x at 2 px/frame, then y at 1),
-  then four parts are launched 50 frames apart. Each (`sub_70212`) starts at
-  (dx + 352, dy + 30), flies left at 2 px/frame for 78 frames, curves
-  (angle −8 every 5 frames, 25 times) and docks at (dx, dy) from the core:
+  kill. Core (280/281): to x 250 at 2 px/frame, then to y 64 at 1 px/frame,
+  then holds while the parts are launched 50 frames apart (A, B, C, D);
+  250 frames after the last one it becomes shootable (`$3B = $11`, 16 hits:
+  `$6FF54` re-arms `$20` each hit) and starts at +1 px/frame. From then on:
+  `ax = ±$800` only while outside x 160–270 (`sub_706DA`), so it swings back
+  and forth; `vy = ±0.5` toward the helicopter's y + 4 (`sub_7069C`, else
+  jeep x / 3 + 32, else 64, never above 40); ~0.8 % chance a frame of a
+  bomb + missile `$706EE` + aimed shots. The assembled carrier has **no
+  contact damage** (its `$3B` only has the shot and level-end bits).
+  Each part (`sub_70212`) starts at (dx + 352, dy + 30), flies left at
+  2 px/frame for 78 frames, then turns −8 every 5 frames, 25 times — the arc
+  ends 2 px from its dock — and from then on (`$70282`) sits at
+  core + (dx + `$68`, dy + `$6A`) every frame, `$68`/`$6A` decaying by 1:
 
-  | Part | Dock | Sprites |
+  | Part (slot) | Dock | Animation list |
   |---|---|---|
-  | `$7002E` | (0, +5) | 290/291, then 293 |
-  | `$70086` | (−8, 0) | 294/295, then 296 (shootable while flying in, 24 hits → kills the carrier) |
-  | `$700E6` | (−9, −1) | 304/306, then 300/302 (two-piece) |
-  | `$7013E` | (−39, +7) | 282/283, then 285; tilts 285→287 (−4 px a step) while the core isn't descending, back to 284 when it is |
+  | A `$7002E` (`$58`) | (0, +5) | 290/291 ×11, then delay 16: 290, 292, 293, hold |
+  | B `$70086` (`$54`) | (−8, 0) | 294/295 ×15, then delay 16: 294, 296, hold; shootable in flight, 24 hits → the carrier dies |
+  | C `$700E6` (`$5C`) | (−9, −1) | 304/306 ×13, then delay 2, loop 300/302 (two-piece) |
+  | D `$7013E` (`$60`) | (−39, +7) | 282/283 ×11, then delay 16: 282, 285, hold; then tilts |
 
-  Assembled it's a large helicopter. After 250 frames the core becomes
-  shootable (16 hits, `$6FF54` re-arms `$20` each hit and makes the parts
-  recoil) and hunts like the gunship, with a small chance each frame
-  (500/65536) of a bomb + missile + aimed shots.
+  Parts kill on contact only while flying in. On each hit (`$6FF54`, when
+  A's offset has settled) the parts are kicked: A down 8, B right 8, C up 8,
+  D right 8. Part D (the head on its neck) steps in 8-frame steps
+  (`sub_70272`) to frame 287, 4 px higher per step, while the core isn't
+  descending, and back to 284 when it is. Assembled, it's the long-necked
+  "goose" helicopter.
+- **Animation lists** (`sub_6C90C`): frame words shown for the current delay
+  (default 2); `$2000|n` sets the delay, `$4000` marks the loop point,
+  `$FFFF` loops, `$FFFE` holds, any other negative word ends the object.
 - **Rewards** (`$6FFAC` → `$6FFD8`): one icon per living player, drifting
   left at 0.25 and homing to y 80 (helicopter) or 118 (jeep); only its owner
   can take it (`$64` vs `-$7E36`). In order: **double shot** (icon 30,

@@ -23,7 +23,7 @@ SW.enemies = (function () {
   function obj(props) {
     return Object.assign({
       x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, ground: false,
-      anim: null, spr: -1, hw: 0, hh: 0, score: 0, hp: 1,
+      anim: null, spr: -1, hw: 12, hh: 12, score: 0, hp: 1,    // hitbox +-12: sub_6C660's default ($1C/$1E)
       wreck: null, shootable: true, touchKills: true, kind: "enemy", alive: true,
     }, props);
   }
@@ -34,8 +34,30 @@ SW.enemies = (function () {
     e.anim = { frames, delay: delay || 2, i: 0, t: delay || 2, hold: !!hold };
     e.spr = frames[0];
   }
+  // Animation list read straight from game memory, stepped like sub_6C90C:
+  // $2000|n sets the delay, $4000 marks the loop point, $FFFF loops,
+  // $FFFE holds the last frame; frames show for `delay` frames (default 2).
+  function setAnimMem(e, addr) {
+    e.anim = { mem: true, ptr: addr, loop: addr, delay: 2, t: 1 };
+    stepAnim(e);
+  }
+  function stepAnimMem(e, a) {
+    if (--a.t > 0) return;
+    const rd = () => { const v = (W.mem[a.ptr] << 8) | W.mem[a.ptr + 1]; a.ptr += 2; return v; };
+    for (let guard = 0; guard < 64; guard++) {
+      const v = rd();
+      if (v & 0x8000) {
+        if (v === 0xffff) { a.ptr = a.loop; continue; }
+        a.t = Infinity; return;                              // $FFFE (or end): hold
+      }
+      if (v & 0x4000) { a.loop = a.ptr; continue; }
+      if (v & 0x2000) { a.delay = v & 0x1fff; continue; }
+      a.t = a.delay; e.spr = v; return;
+    }
+  }
   function stepAnim(e) {
     const a = e.anim;
+    if (a && a.mem) return stepAnimMem(e, a);
     if (!a || --a.t > 0) return;
     a.t = a.delay;
     if (a.i < a.frames.length - 1) a.i++;
@@ -97,7 +119,7 @@ SW.enemies = (function () {
   function missile(x, y, angle, launch, steps, ay, opts) {
     const o = opts || {};
     const speed = o.speed || 2.5;
-    const e = obj({ kind: "missile", x, y, ground: true, hw: 4, hh: 4, score: 1, angle });
+    const e = obj({ kind: "missile", x, y, ground: true, hw: 8, hh: 8, score: 1, angle });   // $1C/$1E = 8 (loc_707C0)
     velocity(e, angle, speed);
     e.ay = ay || 0;
     if (o.vx !== undefined) e.vx = o.vx;
@@ -747,59 +769,76 @@ SW.enemies = (function () {
   }
 
   // $6FE20: bonus carrier, spawned where the triggering kill happened.
-  // The core (280/281) flies to (250, 64); four parts fly in one by one, 50
-  // frames apart, and dock at fixed offsets; after 250 frames the core becomes
-  // shootable (16 hits, $6FF54 re-arms $20 each hit) and hunts like the
-  // gunship. Destroyed ($6FFAC): a reward icon for each living player ($6FFD8).
-  // Parts: [entry, dock dx, dy, flight animation, docked animation]
+  // Core (280/281): to x 250 at 2 px/frame, then to y 64 at 1 px/frame, then
+  // holds while parts A, B, C, D are launched 50 frames apart; waits 250
+  // frames; then becomes shootable (16 hits via $6FF54) and moves: +1 px/frame
+  // to start, accelerating back (sub_706DA, $800) whenever it leaves x
+  // 160..270, and 0.5 px/frame toward the helicopter's height (sub_7069C).
+  // It has no contact damage once assembled. Each hit kicks the parts
+  // (A down, B right, C up, D right by 8 px; they spring back 1 px/frame).
+  // Parts: [slot, dock dx, dy, animation list address]
   const CARRIER_PARTS = [
-    ["7002E", 0, 5, [290, 291], [293]],              // $7002E: 290/291, settles on 293
-    ["70086", -8, 0, [294, 295], [296]],             // $70086: 294/295, settles on 296
-    ["700E6", -9, -1, [304, 306], [300, 302]],       // $700E6: 304/306, then 300/302 (two-piece)
-    ["7013E", -39, 7, [282, 283], [285]],            // $7013E: 282/283, settles on 285, then tilts
+    ["A", 0, 5, 0x70032],      // $7002E: flaps 290/291, unfolds 290 -> 292 -> 293
+    ["B", -8, 0, 0x7008A],     // $70086: 294/295, then 294 -> 296 (shootable in flight)
+    ["C", -9, -1, 0x700EA],    // $700E6: 304/306, then loops 300/302 (two-piece)
+    ["D", -39, 7, 0x70142],    // $7013E: 282/283, then 282 -> 285, then tilts
   ];
   function carrier(x, y) {
     const e = obj({ kind: "carrier", x: x == null ? 0x150 : x, y: y == null ? 0x40 : y,
-                    hp: 16, score: 5, shootable: false, touchKills: true });
+                    hp: 16, score: 5, shootable: false, touchKills: false });
     setAnim(e, [280, 281]);
-    e.onDeath = (e) => {
+    e.parts = {};
+    e.onHit = (e) => {                                  // $6FF54: kick the parts
+      const p = e.parts;
+      if (!p.A || p.A.ry !== 0) return;
+      p.A.ry = 8; if (p.B) p.B.rx = 8; if (p.C) p.C.ry = -8; if (p.D) p.D.rx = 8;
+    };
+    e.onDeath = (e) => {                                // $6FFAC
       W.bonusActive = false;
       for (const p of W.players) if (p.joined && !p.dead) reward(e.x, e.y, p);
     };
     return spawn(e, function* (e) {
-      let n = Math.abs(0xfa - e.x) >> 1;               // to x 250 at 2 px/frame
-      e.vx = 0xfa > e.x ? 2 : -2;
-      yield* move(e, n); e.vx = 0;
-      n = Math.abs(Math.round(0x40 - e.y));            // then to y 64 at 1 px/frame
-      e.vy = 0x40 > e.y ? 1 : -1;
-      yield* move(e, n); e.vy = 0; e.y = 0x40;
+      let d = Math.round(0xfa - e.x);
+      if (d) { e.vx = d > 0 ? 2 : -2; yield* move(e, Math.abs(d) >> 1); e.vx = 0; }
+      d = Math.round(0x40 - e.y);
+      if (d) { e.vy = d > 0 ? 1 : -1; yield* move(e, Math.abs(d)); e.vy = 0; }
       for (const def of CARRIER_PARTS) {
-        carrierPart(e, def);
+        e.parts[def[0]] = carrierPart(e, def);
         yield* move(e, 0x32);
       }
-      yield* move(e, 0xfa);
+      yield* move(e, 0xfa - 0x32);                      // (the last 50 above are part of the wait)
       e.shootable = true;
       e.vx = 1;
       while (true) {
-        if (W.rand(65536) < 0x1f4) { bomb(e.x, e.y); missile(e.x, e.y + 20, 0x80, 25, 12); aimedAtEach(e.x, e.y); }
-        e.ax = e.x < 0xa0 ? 0x800 / 65536 : e.x > 0x10e ? -0x800 / 65536 : 0;    // sub_706DA
+        if (W.rand(65536) < 0x1f4) {                    // ~0.8 % a frame: bomb, missile, aimed shots
+          bomb(e.x, e.y);
+          missile(e.x, e.y + 20, 0x80, 25, 12, 0, { vx: 0, vy: 1, ax: -0x147a / 65536, ay: -0xa3d / 65536 });
+          aimedAtEach(e.x, e.y);
+        }
+        e.ax = e.x < 0xa0 ? 0x800 / 65536 : e.x > 0x10e ? -0x800 / 65536 : 0;
         const h = W.players.find((p) => p.kind === "heli" && p.joined && !p.dead);
         const j = W.players.find((p) => p.kind === "jeep" && p.joined && !p.dead);
-        let ty = h ? h.y + 4 : j ? Math.floor(j.x / 3) + 0x20 : 0x40;            // sub_7069C
+        let ty = h ? h.y + 4 : j ? Math.floor(j.x / 3) + 0x20 : 0x40;
         ty = Math.max(0x28, ty);
-        e.vy = ty > e.y ? 0.5 : ty < e.y ? -0.5 : 0;
+        const cy = Math.floor(e.y);
+        e.vy = ty > cy ? 0.5 : ty < cy ? -0.5 : 0;
         physics(e); yield;
       }
     });
   }
 
-  // sub_70212: a part starts at (dx + 352, dy + 30), flies left at 2 px/frame
-  // for 78 frames, then curves (angle -8 every 5 frames, 25 times) and docks
-  // at (dx, dy) from the core. The rear part ($7013E) then tilts with the
-  // core: 285 -> 287 while it isn't descending, back to 284 when it is.
-  function carrierPart(core, [entry, dx, dy, flight, docked]) {
-    const e = obj({ kind: "part", x: dx + 0x160, y: dy + 0x1e, shootable: false, touchKills: true });
-    setAnim(e, flight);
+  // sub_70212: from (dx + 352, dy + 30) fly left at 2 px/frame for 78 frames,
+  // then turn -8 every 5 frames, 25 times; the arc ends 2 px from the dock.
+  // Then $70282: every frame at core + (dx + rx, dy + ry), with the kick
+  // offsets rx/ry decaying by 1. Kills on contact only while flying in.
+  function carrierPart(core, [slot, dx, dy, list]) {
+    const e = obj({ kind: "part", x: dx + 0x160, y: dy + 0x1e, shootable: false, touchKills: true,
+                    rx: 0, ry: 0 });
+    if (slot === "B") {                                 // shootable in flight: 24 hits destroy the carrier
+      e.shootable = true; e.hp = 24;
+      e.onDeath = () => { if (core.alive && core.kind === "carrier") W.kill(core); };
+    }
+    setAnimMem(e, list);
     return spawn(e, function* (e) {
       let angle = 0x80;
       velocity(e, angle, 2);
@@ -809,23 +848,27 @@ SW.enemies = (function () {
         velocity(e, angle, 2);
         yield* move(e, 5);
       }
-      // ease into the docking point
-      for (let i = 10; i > 0 && core.alive; i--) {
-        e.x += (core.x + dx - e.x) / i; e.y += (core.y + dy - e.y) / i;
-        stepAnim(e); yield;
-      }
-      e.touchKills = false;
-      setAnim(e, docked);
-      let tilt = 0, t = 0;                           // rear part: 284..287, 4 px higher per step
+      e.touchKills = false; e.shootable = false; e.vx = e.vy = 0;
+      // rear part D ($70192): 3 steps of 8 frames (sub_70272) up to frame 287,
+      // 4 px higher each, while the core isn't descending; back down to 284
+      // when it is. k = steps up (0..3): frame 284 + k, 4k px higher.
+      let tilt = 0, up = false, steps = 0, stepT = 0;
       while (core.alive && core.kind === "carrier") {
-        if (entry === "7013E" && ++t % 4 === 0) {
-          const up = core.vy <= 0;
-          if (up && tilt < 2) tilt++; else if (!up && tilt > -1) tilt--;
-          e.spr = 285 + tilt;
+        if (slot === "D" && steps === 0) {
+          const descending = core.vy > 0;
+          if (descending && up) { up = false; steps = 3; stepT = 0; }
+          else if (!descending && !up) { up = true; steps = 3; stepT = 0; }
         }
-        e.x = core.x + dx; e.y = core.y + dy - (entry === "7013E" ? 4 * tilt : 0);
-        if (entry !== "7013E") stepAnim(e);
-        e.blink = core.blink;
+        if (slot === "D" && steps > 0 && --stepT <= 0) {
+          tilt += up ? 1 : -1;
+          e.anim = null; e.spr = 284 + tilt;
+          steps--; stepT = 8;
+        }
+        e.x = core.x + dx + e.rx;
+        e.y = core.y + dy + e.ry - (slot === "D" ? 4 * tilt : 0);
+        if (e.rx) e.rx += e.rx > 0 ? -1 : 1;
+        if (e.ry) e.ry += e.ry > 0 ? -1 : 1;
+        stepAnim(e);
         yield;
       }
       W.boom(e.x, e.y, W.rand(10));
