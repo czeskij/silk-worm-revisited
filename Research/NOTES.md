@@ -296,7 +296,25 @@ Level 11 families (and their other group sizes elsewhere) — with these,
 | `6DCF6` | a bomb at (330, 118) | |
 | `6DE56` | nothing (jumps to `loc_6C6FE`) | |
 
-Still generic: 36 waves from ~25 small families.
+The last families — **every one of the 604 waves now has its own behaviour**:
+
+| Routine | Enemy | Behaviour |
+|---|---|---|
+| `6E76A` (`6E74E`–`6E75E`: 4/6/8/9/12, 30 frames apart) | paratrooper | parachute (`$6E7F8`, 150/151) from y −32 at x 96–223 sinking at 1, a vehicle (154/155) 16 px below; at y `$90` it lands on the road and drives off accelerating left or right (±`$1000`) |
+| `6DF86` (`6DF76` ×2, `6DF7A` ×4, 40 apart) | dive bomber (90/91, 92/93) | from (335, 32) at −2; 4 times: after 100 frames a loop starting straight down, −8 per 10 frames for 17 steps, a bomb each step |
+| `6D538` | distant battleship (94→95→96) | background layer (`sub_6D52C` respawns it on the other task list), moves with the backdrop, 8 background shells (`$6D5A2`) 40 frames apart |
+| `6D9D6` | distant bomber (210/212) | background, y 40, −0.375 |
+| `6DA22` (`6DA08` ×2, `6DA04` ×3, `6DA14`, 100 apart) | distant plane (87/88) | background, from x −30, y 38–53, +0.25 |
+| `6DA66` | vehicle (137/138, wreck 139) | enters from the left at +0.5 |
+| `6EB90` (`6EB88` y 32, `6EB7E` y 128) | transport plane (200/202) | from the left at +0.5, can't be destroyed (shot handler `rts`); `sub_6EBEA` every 250 frames (not decoded; the remake drops a bomb) |
+| `6FC9C` | large ground vehicle (156–158 + 159) | waits 80 frames, then keeps pace with the scroll (tail approximate) |
+| `6D8A0` | ground emplacement (230–233) | launches a linked child `$6D902` (not decoded; the remake fires aimed shots) |
+| `6D22A` (`6D21E` ×6, 125 apart) | armoured vehicle (wreck 145+146) | on the road at +0.75, score 4 |
+| `6DDAA`, `6E02E`, `6E552`, `6DE62`, `6ECD6` | other group sizes of the sinker column, floating pod, helicopter, descender and dasher families | |
+
+Partly approximated: the tails of `6EB90`, `6FC9C`, `6D8A0` (marked above),
+the swirling planes' loop speed, the carrier's part layout, and boss B's rear
+part taking hits.
 
 **Projectiles**: `loc_707C0` missiles/shells: 2.5 px/frame, hitbox ±8, fly
 `d0` frames as fired (shell: straight up with extra upward acceleration), then

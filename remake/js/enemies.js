@@ -587,6 +587,148 @@ SW.enemies = (function () {
     });
   }
 
+  // ---------------------------------------------------------------- last families
+
+  // $6E76A (groups $6E74E-$6E75E, 30 frames apart): paratrooper. A parachute
+  // ($6E7F8, 150/151) sinks from y -32 at a random x (96-223) with a vehicle
+  // (154/155) hanging 16 px below; at y $90 the vehicle lands on the road and
+  // drives off, accelerating left or right at random.
+  function paratrooper() {
+    const chute = obj({ x: 0x60 + W.rand(128), y: -32, vy: 1, score: 1, touchKills: false });
+    setAnim(chute, [150, 151], 0x18);
+    const truck = obj({ x: chute.x, y: chute.y + 17, score: 4 });
+    setAnim(truck, [154, 155]);
+    spawn(chute, function* (c) {
+      while (truck.alive && truck.y < 0x90) { physics(c); yield; }
+      if (truck.y >= 0x90) c.alive = false; else yield* drift(c);
+    });
+    return spawn(truck, function* (t) {
+      while (t.y < 0x90) {
+        if (!chute.alive) { t.vy += 0.15; physics(t); yield; continue; }   // chute shot away: falls
+        t.x = chute.x; t.y = chute.y + 17; stepAnim(t); yield;
+      }
+      t.y = 0x8e; t.vy = 0; t.ground = true;
+      t.ax = (W.rand(2) ? 1 : -1) * 0x1000 / 65536;
+      yield* drift(t);
+    });
+  }
+
+  // $6DF86 (groups $6DF76 x2 / $6DF7A x4, 40 frames apart): dive bomber (90/91,
+  // 92/93 diving). Cruises left at 2, then 4 times: after 100 frames loops
+  // down and back up (angle from straight down, -8 every 10 frames, 17 steps),
+  // dropping a bomb each step.
+  function diveBomber() {
+    const e = obj({ x: 0x14f, y: 0x20, vx: -2, score: 2 });
+    setAnim(e, [90, 91]);
+    return spawn(e, function* (e) {
+      yield* move(e, 20);
+      for (let k = 0; k < 4 && !offscreen(e); k++) {
+        yield* move(e, 100);
+        setAnim(e, [92, 93]);
+        let angle = 0x40;
+        for (let s = 0; s < 17; s++) {
+          velocity(e, angle, 2);
+          yield* move(e, 10);
+          bomb(e.x, e.y);
+          angle = (angle - 8) & 255;
+        }
+        e.vy = 0; e.vx = -2;
+        setAnim(e, [90, 91]);
+      }
+      yield* drift(e);
+    });
+  }
+
+  // Background-layer objects (sub_6D52C respawns them on the other task list):
+  // drawn behind the action, not part of the fight.
+  function background(e, script) { e.background = true; e.shootable = false; e.touchKills = false; return spawn(e, script); }
+
+  // $6D538 (level 6): distant battleship (94 -> 95 -> 96), moves with the
+  // backdrop, launches 8 background shells ($6D5A2, 173/174) 40 frames apart.
+  function battleship() {
+    const e = obj({ x: 0x170, y: 0x7f, vx: 0.25 });
+    e.spr = 0x5e;
+    return background(e, function* (e) {
+      while (e.x > -100) {
+        for (let i = 0; i < 200; i++) { e.x += e.vx - W.scrollDelta / 2; yield; }
+        for (let k = 0; k < 8; k++) {
+          const s = obj({ x: e.x - 4, y: e.y + 5, vy: -1.5, ay: 0.02 });
+          setAnim(s, [173, 174]);
+          background(s, function* (s) { for (let i = 0; i < 0x72; i++) { s.x -= W.scrollDelta / 2; physics(s); yield; } });
+          for (let i = 0; i < 40; i++) { e.x += e.vx - W.scrollDelta / 2; yield; }
+        }
+      }
+    });
+  }
+  // $6D9D6: distant bomber (210 / 212, two pieces each) crossing at y 40.
+  function farBomber() {
+    const e = obj({ x: 0x14a, y: 0x28, vx: -0x6000 / 65536 });
+    setAnim(e, [210, 212]);
+    return background(e, drift);
+  }
+  // $6DA22 (groups $6DA08 x2 / $6DA04 x3, 100 frames apart): distant plane (87/88)
+  // flying right from x -30 at y 38-53.
+  function farPlane() {
+    const e = obj({ x: -30, y: 0x26 + W.rand(16), vx: 0.25 });
+    setAnim(e, [87, 88]);
+    return background(e, drift);
+  }
+
+  // $6DA66: vehicle (137/138, wreck 139) entering from the left at +0.5.
+  function rearVehicle() {
+    const e = obj({ x: -15, y: 0x8e, vx: 0.5, score: 8, wreck: 139 });
+    setAnim(e, [137, 138], 4);
+    return spawn(e, drift);
+  }
+
+  // $6EB90 ($6EB88 y 32 / $6EB7E y 128): transport plane (200/202, two pieces)
+  // from the left at +0.5; its shot handler does nothing, so it can't be
+  // destroyed. Every 250 frames sub_6EBEA runs (not decoded: drops a bomb here).
+  function transport(y) {
+    const e = obj({ x: -32, y, vx: 0.5, hw: 24, hh: 10, score: 0 });
+    setAnim(e, [200, 202]);
+    e.invulnerable = true;
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) {
+        yield* move(e, 0xfa);
+        if (!offscreen(e)) bomb(e.x, e.y + 8);
+      }
+    });
+  }
+
+  // $6FC9C: large ground vehicle (156-158 + 159): waits 80 frames, then keeps
+  // pace with the scroll (+1) for a while (the rest is approximate).
+  function bigVehicle() {
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, score: 6 });
+    setAnim(e, [156, 157, 158]);
+    return spawn(e, function* (e) {
+      yield* move(e, 0x50);
+      e.vx = 1;
+      yield* move(e, 200);
+      e.vx = 0;
+      yield* drift(e);
+    });
+  }
+
+  // $6D8A0: ground emplacement (230-233, hitbox 16) launching a linked child
+  // ($6D902, not decoded: aimed shots here).
+  function emplacement() {
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, hw: 16, hh: 16, score: 3 });
+    setAnim(e, [230, 231, 232, 233], 0x20);
+    return spawn(e, function* (e) {
+      while (!offscreen(e)) { yield* move(e, 60); if (!offscreen(e)) aimedShot(e.x - 1, e.y - 8); }
+    });
+  }
+
+  // $6D22A (group $6D21E x6, 125 frames apart): armoured vehicle on the road,
+  // +0.75 against the scroll, wreck 145 (two pieces), score 4.
+  function armoured() {
+    const h = HINTS["6D21E"];
+    const e = obj({ x: 0x14f, y: 0x8e, ground: true, vx: 0.75, score: 4, wreck: 0x91 });
+    setAnim(e, (h && Object.values(h.frames)[0]) || [140, 141], 4);
+    return spawn(e, drift);
+  }
+
   // $6F5FE (and from mines): shield item. Drifts up-left with the ground.
   // Touch it ($6F94E): a 300-frame shield. Shoot it 18 times ($6F92C, sprite
   // changes with 3 to go): it becomes a smart bomb ($6F6B6) that destroys
@@ -862,6 +1004,21 @@ SW.enemies = (function () {
     "6D2A4": () => group(2, 0x14, hoverer), "6D2B8": () => hoverer(),
     "6ED7C": () => seekers(2), "6ED80": () => seekers(3),
     "6ECE6": () => dasher(), "6DF28": () => car(),
+    // the last families
+    "6DDAA": () => column(1), "6E02E": () => group(6, 0x14, () => floater()),
+    "6E552": () => heliGroup(2, false), "6DE62": () => group(6, 0x28, descender),
+    "6ECD6": () => group(2, 0x28, dasher),
+    "6E74E": () => group(4, 0x1e, paratrooper), "6E752": () => group(6, 0x1e, paratrooper),
+    "6E756": () => group(8, 0x1e, paratrooper), "6E75A": () => group(9, 0x1e, paratrooper),
+    "6E75E": () => group(12, 0x1e, paratrooper),
+    "6DF76": () => group(2, 0x28, diveBomber), "6DF7A": () => group(4, 0x28, diveBomber),
+    "6D538": () => battleship(), "6D9D6": () => farBomber(),
+    "6DA22": () => farPlane(), "6DA14": () => farPlane(),
+    "6DA08": () => group(2, 0x64, farPlane), "6DA04": () => group(3, 0x64, farPlane),
+    "6DA66": () => rearVehicle(),
+    "6EB88": () => transport(0x20), "6EB7E": () => transport(0x80),
+    "6FC9C": () => bigVehicle(), "6D8A0": () => emplacement(),
+    "6D21E": () => group(6, 0x7d, armoured),
   };
   // stubs: group size and spacing as in each `moveq #n,d0 / moveq #m,d1`
   const JETS = { "6E456": [20, 10], "6E45C": [16, 16], "6E462": [9, 20], "6E468": [6, 18], "6E46E": [4, 20],

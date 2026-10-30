@@ -318,6 +318,7 @@ SW.game = (function () {
         s.dead = true;
         const t = e.forward || e;                            // linked parts pass hits on
         if (!t.alive || !t.shootable) break;
+        if (t.invulnerable) break;                           // e.g. the transport plane: shots just stop
         t.hp--;
         if (t.kind === "boss") t.blink = 3;                   // $6F8E0: flash on each hit
         if (t.onHit) t.onHit(t);
@@ -422,6 +423,7 @@ SW.game = (function () {
     const back = scroll >> 1, cols = SW.gfx.backCols;
     for (let i = back >> 4; i <= (back >> 4) + 21; i++)
       ctx.drawImage(cols[lv.backStream[i % lv.backStream.length] % 20], i * 16 - back, 0);
+    for (const e of enemies) if (e.background) drawEnemy(e);   // far layer (sub_6D52C), behind the road
     for (let i = scroll >> 4; i <= (scroll >> 4) + 21; i++) {
       const col = world.groundOverride.has(i) ? world.groundOverride.get(i) : lv.groundStream[i % lv.groundStream.length];
       ctx.drawImage(SW.gfx.ground(col), i * 16 - scroll, 144);
@@ -430,13 +432,13 @@ SW.game = (function () {
     scenery.objs = scenery.objs.filter((o) => o.wx - scroll > -64);
     for (const o of scenery.objs) drawSprite(o.spr, o.wx - scroll, 0x90);
 
-    for (const e of enemies) if (e.ground && e.kind !== "missile") drawEnemy(e);
+    for (const e of enemies) if (!e.background && e.ground && e.kind !== "missile") drawEnemy(e);
     for (const p of players) {
       if (!p.joined || p.dead || (p.inv > 0 && frame & 4)) continue;
       drawSprite(playerSprite(p), p.x, p.y);
       if (p.shield > 0) drawSprite(34 + ((frame >> 1) & 1), p.x, p.y);   // the orb ($6F680)
     }
-    for (const e of enemies) if (!e.ground || e.kind === "missile") drawEnemy(e);
+    for (const e of enemies) if (!e.background && (!e.ground || e.kind === "missile")) drawEnemy(e);
 
     for (const s of shots) drawHw(s.spr, s.x, s.y);
     for (const bm of booms) if (bm.f >= 0) drawSprite(E.EXPLOSION[Math.min(4, bm.f >> 3)], bm.x, bm.y);

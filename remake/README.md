@@ -44,8 +44,9 @@ From the disassembly (see `../Research/NOTES.md`):
 - the wave schedule of every level, the level length and the boss at the end
 - helicopter and jeep movement, bounds, the jeep's jump (−3 px/frame, gravity
   0.125) and gun angles, fire rate and shot directions
-- enemy behaviour for 94 % of all waves, every wave on level 11
-  (`js/enemies.js`): mines, tanks, missile launchers with homing missiles,
+- enemy behaviour for every one of the 604 waves (`js/enemies.js`), including
+  paratroopers, dive bombers, transport planes and the distant background
+  ships and planes: mines, tanks, missile launchers with homing missiles,
   helicopter groups, walkers with turrets, AA guns, missile silos, ground
   turrets, floating pods, drones, jets, dive planes, bouncing helicopters,
   seekers, blimps, armoured cars, swirling planes, descenders, hovering
@@ -62,8 +63,10 @@ From the disassembly (see `../Research/NOTES.md`):
   the game
 
 Approximated for now:
-- the remaining enemy types (36 waves, 6 %) use a generic flying or ground
-  behaviour with their real sprites
+- a few enemy details whose code wasn't fully followed (listed in
+  `../Research/NOTES.md`): what the transport plane drops, the large ground
+  vehicle's later movement, the emplacement's projectile, the swirling planes'
+  loop speed
 - the bonus carrier's four parts are placed approximately (their layout
   isn't decoded); losing upgrades on death is assumed
 - no sound, simple HUD
