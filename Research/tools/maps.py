@@ -23,7 +23,7 @@ import sys
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from extract import tracks, write_png  # noqa: E402
 from levels import LEVEL_PTRS, LEVEL_TRACKS, PALETTES, column_pixels, stream  # noqa: E402
-from waves import scripts, sprite_image, walk  # noqa: E402
+from waves import composite, scripts, walk  # noqa: E402
 
 GROUND_BANK = 0x62272
 LEVEL_LEN = 4704
@@ -57,11 +57,6 @@ def scenery(mem, level, length):
         elif w:
             out.append((pos + 0x150, w))
     return out
-
-
-def sprite_rec(mem, idx):
-    rec = (struct.unpack_from(">I", mem, 0x4A498 + idx * 4)[0] + 0x5F3B8) & 0xFFFFFFFF
-    return struct.unpack_from(">hh", mem, rec + 6)
 
 
 def blit(px, img, x0, y0, pal):
@@ -112,8 +107,8 @@ def main():
         # scenery objects
         objs = scenery(mem, level, LEVEL_LEN)
         for wx, spr in objs:
-            hx, hy = sprite_rec(mem, spr)
-            blit(px, sprite_image(mem, spr, pal), wx - hx, SCENERY_Y - hy, pal)
+            img, hx, hy = composite(mem, spr)       # linked pieces too (sub_712D8)
+            blit(px, img, wx - hx, SCENERY_Y - hy, pal)
 
         # enemy waves: icon where the wave enters (clock + one screen)
         band = BACK_H + GROUND_H
@@ -129,7 +124,7 @@ def main():
                     if 0 <= xx < width:
                         px[yy][xx] = (200, 160, 40)
             if frames:
-                img = sprite_image(mem, frames[0][0], pal)
+                img = composite(mem, frames[0][0])[0]
                 blit(px, [r[:40] for r in img[:BAND_H - 6]],
                      x - min(len(img[0]), 40) // 2, band + 4 + (lane % 2) * 2, pal)
             lane += 1

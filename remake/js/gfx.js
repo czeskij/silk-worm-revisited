@@ -4,6 +4,10 @@
 SW.gfx = (function () {
   const { be16, bes16, be32, tracks } = SW.adf;
   const SPRITE_PTRS = 0x4A498, SPRITE_REC_BIAS = 0x5F3B8, SPRITE_PIX = 0x4AAD8;
+  // Per sprite: x/y offset (signed bytes) and the next piece of a composite
+  // object (word, 0 = none). $715C0 folds the offset into the hotspot and the
+  // link into record field $C; sub_712D8 draws the linked piece first.
+  const SPRITE_LINKS = 0x49D4C;
   const PALETTES = 0x67732, LEVEL_TRACKS = 0x6B924, LEVEL_PTRS = 0x69E3C;
   const GROUND_BANK = 0x62272;
 
@@ -32,7 +36,10 @@ SW.gfx = (function () {
         px[y * w + x] = c;
       }
     }
-    return { w, h: rows, hx: bes16(mem, rec + 6), hy: bes16(mem, rec + 8), px };
+    const dx = (mem[SPRITE_LINKS + idx * 4] << 24) >> 24, dy = (mem[SPRITE_LINKS + idx * 4 + 1] << 24) >> 24;
+    const next = be16(mem, SPRITE_LINKS + idx * 4 + 2);
+    return { w, h: rows, hx: bes16(mem, rec + 6) - dx, hy: bes16(mem, rec + 8) - dy, px,
+             next: next > 0 && next < 400 ? next : 0 };
   }
 
   function amigaColour(c) {
@@ -117,7 +124,7 @@ SW.gfx = (function () {
     let s = spriteCache.get(i);
     if (s === undefined) {
       const d = spriteData[i];
-      s = d ? { cv: toCanvas(d.w, d.h, d.px, true), w: d.w, h: d.h, hx: d.hx, hy: d.hy } : null;
+      s = d ? { cv: toCanvas(d.w, d.h, d.px, true), w: d.w, h: d.h, hx: d.hx, hy: d.hy, next: d.next } : null;
       spriteCache.set(i, s);
     }
     return s;

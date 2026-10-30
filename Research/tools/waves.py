@@ -149,6 +149,40 @@ def sprite_image(mem, idx, pal):
     return img
 
 
+SPRITE_LINKS = 0x49D4C   # per sprite: dx, dy (signed bytes), next piece (word)
+
+
+def sprite_hotspot(mem, idx):
+    """Hotspot after $715C0 folds in the offset from the link table."""
+    rec = (struct.unpack_from(">I", mem, SPRITE_PTRS + idx * 4)[0] + SPRITE_REC_BIAS) & 0xFFFFFFFF
+    hx, hy = struct.unpack_from(">hh", mem, rec + 6)
+    dx, dy, nxt = struct.unpack_from(">bbh", mem, SPRITE_LINKS + idx * 4)
+    return hx - dx, hy - dy, (nxt if 0 < nxt < 400 else 0)
+
+
+def composite(mem, idx, pal_unused=None):
+    """Whole object as sub_712D8 draws it: (rows, hx, hy), linked pieces under."""
+    pieces, n = [], idx
+    while n and len(pieces) < 8:
+        hx, hy, nxt = sprite_hotspot(mem, n)
+        pieces.append((sprite_image(mem, n, None), hx, hy))
+        n = nxt
+    if idx == 0:
+        hx, hy, _ = sprite_hotspot(mem, 0)
+        pieces = [(sprite_image(mem, 0, None), hx, hy)]
+    left = min(-hx for _, hx, _ in pieces)
+    top = min(-hy for _, _, hy in pieces)
+    right = max(-hx + len(img[0]) for img, hx, _ in pieces)
+    bottom = max(-hy + len(img) for img, _, hy in pieces)
+    out = [[0] * (right - left) for _ in range(bottom - top)]
+    for img, hx, hy in reversed(pieces):          # linked pieces first, the head on top
+        for y, row in enumerate(img):
+            for x, c in enumerate(row):
+                if c:
+                    out[y - hy - top][x - hx - left] = c
+    return out, -left, -top
+
+
 def timeline(mem, lv, events, path):
     """One row per wave: clock bar on the left, sprite on the right."""
     pal = [((c >> 8 & 15) * 17, (c >> 4 & 15) * 17, (c & 15) * 17)
@@ -167,7 +201,7 @@ def timeline(mem, lv, events, path):
         for k in range(min(count or 1, 6)):
             if not frames:
                 break
-            img = sprite_image(mem, frames[0][0], pal)
+            img = composite(mem, frames[0][0])[0]
             for yy, row in enumerate(img[:row_h - 2]):
                 for xx, c in enumerate(row):
                     if c and x0 + xx < width:
@@ -193,7 +227,7 @@ def legend(mem, uses, path):
                 for xx in range(x0 + 30, x0 + 50):
                     px[yy][xx] = (90, 30, 30)
             continue
-        img = sprite_image(mem, frames[0][0], pal)
+        img = composite(mem, frames[0][0])[0]
         for yy, row in enumerate(img[:cell_h - 2]):
             for xx, c in enumerate(row[:cell_w - 2]):
                 if c:

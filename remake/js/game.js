@@ -186,10 +186,15 @@ SW.game = (function () {
 
   // Boxes in object coordinates (sprites are drawn 15 px higher, like sub_712AA).
   function spriteBox(i, x, y) {
-    const s = SW.gfx.sprite(i);
+    let s = SW.gfx.sprite(i);
     if (!s) return { l: x - 8, r: x + 8, t: y - 8, b: y + 8 };
-    const l = x - s.hx, t = y - s.hy;
-    return { l: l + 3, r: l + s.w - 3, t: t + 2, b: t + s.h - 2 };
+    const box = { l: 1e9, r: -1e9, t: 1e9, b: -1e9 };
+    for (let n = 0; s && n < 8; n++, s = s.next ? SW.gfx.sprite(s.next) : null) {   // whole chain
+      const l = x - s.hx, t = y - s.hy;
+      box.l = Math.min(box.l, l + 3); box.r = Math.max(box.r, l + s.w - 3);
+      box.t = Math.min(box.t, t + 2); box.b = Math.max(box.b, t + s.h - 2);
+    }
+    return box;
   }
   function enemyBox(e) {
     if (e.hw && e.hh) return { l: e.x - e.hw, r: e.x + e.hw, t: e.y - e.hh, b: e.y + e.hh };
@@ -361,9 +366,13 @@ SW.game = (function () {
 
   // ---------------------------------------------------------------- draw
 
-  function drawSprite(i, x, y) {
+  // sub_712D8: a sprite linked to another piece draws that piece first,
+  // at the same position, so composite objects come out whole.
+  function drawSprite(i, x, y, depth) {
     const s = SW.gfx.sprite(i);
-    if (s) ctx.drawImage(s.cv, Math.round(x - s.hx), Math.round(y - 15 - s.hy));
+    if (!s) return;
+    if (s.next && (depth || 0) < 8) drawSprite(s.next, x, y, (depth || 0) + 1);
+    ctx.drawImage(s.cv, Math.round(x - s.hx), Math.round(y - 15 - s.hy));
   }
 
   function text(str, x, y, colour, align) {

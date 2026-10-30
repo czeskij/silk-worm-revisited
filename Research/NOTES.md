@@ -117,6 +117,17 @@ Two tasks start with each level, before the wave scheduler (`$6EECC`):
 - Setup routine `$715C0` relocates 400 object records and builds their masks.
 - Pointer table `$4A498` (400 longs, record = value + `$5F3B8`).
 - Record: `+0` width (words), `+2` rows, `+6/+8` hotspot, `+$E` pixel offset from `$4AAD8`.
+- **Composite objects**: table `$49D4C`, 4 bytes per sprite: x/y offset
+  (signed bytes) and the next piece (word, 0 = none). `$715C0` subtracts the
+  offset from the hotspot and stores the link in record field `$C`;
+  `sub_712D8` draws the linked piece first, at the same position, then the
+  sprite itself (recursively), so one sprite number draws a whole object.
+  88 sprites use it: e.g. the jet 85+86, the three-piece plane 94→95→96,
+  tanks 162+163 (and wrecks, raised 12 px), the gunship boss
+  240→241→246→244→245, boss B's rear 218+219, the scenery stack
+  361→362→363; others only shift (jeep frames −2 px, mines −16 px).
+  The sprite sheets show single pieces; the maps, wave images and the remake
+  draw whole objects.
 - Pixels: row-interleaved, 4 bitplanes per row. Masks are built at runtime into `$2AE6C+`.
 - Palettes: `sub_69BC8` copies 32 colours from `a0` into the target palette at
   `-$7FBC(a6)`; the fader at `$6C398` blends the live palette towards it.
