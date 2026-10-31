@@ -13,7 +13,7 @@
   },
   "kv_namespaces": [
     // filled in by setup.js
-    { "binding": "GAMEDATA", "id": "SET_BY_SETUP" }
+    { "binding": "GAMEDATA", "id": "2a38c40e273442f2af0e16ccdd34b84b" }
   ],
   "vars": { "AUTH_USER": "silkworm" }
 }
