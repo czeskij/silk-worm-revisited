@@ -74,7 +74,7 @@ SW.game = (function () {
     Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0,
                            stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false, bonusActive: false,
                            groundOverride: new Map(),   // ground column index -> column number
-                           boom: (x, y, delay) => booms.push({ x, y, f: delay || 0 }),
+                           boom: (x, y, delay, type) => boom(x, y, delay, type), debris, bigBlast, finalBlast,
                            mem, kill: (e, shooter) => destroy(e, shooter || null),
                            // $708A2: everything on screen counts as hit by a vehicle
                            destroyAll: () => {
@@ -170,10 +170,74 @@ SW.game = (function () {
   }
   const playerSprite = (p) => (p.kind === "heli" ? heliSprite(p) : jeepSprite(p));
 
+  // ---------------------------------------------------------------- explosions
+
+  // Animation lists from the disassembly; a negative f is a delay.
+  const BOOM = {
+    std: { frames: [333, 334, 335, 336, 337, 338], delay: 4 },     // $6F7C4: enemies, wrecks
+    alt: { frames: [344, 345, 346, 347, 348, 349], delay: 4 },     // $6F7EE
+    ground: { frames: [320, 321, 322, 323, 324], delay: 2 },       // $70876: missile hits the road
+  };
+  const DEBRIS = [325, 326, 327, 328, 329, 330, 331, 332, 308, 309, 314, 315, 316, 317, 318, 319];   // $6F88A
+  function boom(x, y, delay, type) { booms.push({ x, y, f: -(delay || 0), type: type || "std" }); }
+  // $6F85E: 16 pieces flung out at 16 angle steps, 8 px/frame, for 24 frames
+  function debris(x, y, delay) {
+    for (let i = 15; i >= 0; i--) {
+      const a = i * 16;
+      booms.push({ x, y, f: -(delay || 0), type: "debris", spr: DEBRIS[i],
+                   vx: sin[(a + 64) & 255] * 8 / 256, vy: sin[a] * 8 / 256 });
+    }
+  }
+  // $6F790/$6F7A6: four explosions around a destroyed player (or after a boss)
+  function cluster(x, y, t) {
+    boom(x + 6, y, t); boom(x - 6, y - 8, t + 8); boom(x + 6, y + 8, t + 18); boom(x - 6, y, t + 26);
+  }
+  // $6F764: a boss goes up: 30 scattered explosions 5 frames apart ($6F818),
+  // three debris bursts 8 frames apart, then the cluster
+  function bigBlast(x, y) {
+    for (let k = 0; k < 30; k++) boom(x + rand(32) - 16, y + rand(32) - 16, k * 5, "alt");
+    debris(x, y, 0); debris(x, y, 8); debris(x, y, 16);
+    cluster(x, y, 16);
+  }
+  // $703DA: the final boss: 100 blasts every 2 frames, then explosions all over
+  // the sky ($702CC); each picks debris (1 in 8), $6F7EE (2 in 8) or $6F7C4
+  function finalBlast(x, y) {
+    const one = (bx, by, t) => {
+      const r = rand(8);
+      if (r === 0) debris(bx, by, t); else boom(bx, by, t, r < 3 ? "alt" : "std");
+    };
+    booms.push({ f: 0, type: "rumble" }, { f: -200, type: "rumble" });
+    for (let k = 0; k < 100; k++) one(x + rand(32) - 16, y + rand(48) - 24, k * 2);
+    for (let k = 0; k < 150; k++) {
+      one(rand(320), 0x10 + rand(128), 400 + k * 4); one(rand(320), 0x10 + rand(128), 400 + k * 4);
+      if (rand(8) === 0) booms.push({ f: -(400 + k * 4), type: "rumble" });
+    }
+  }
+  function boomDone(b) {
+    if (b.type === "rumble") return b.f >= 1;      // not drawn: plays sub_703AA when due
+    if (b.type === "debris") return b.f >= 24;
+    const t = BOOM[b.type];
+    return b.f >= t.frames.length * t.delay;
+  }
+  function stepBooms() {
+    for (const b of booms) {
+      b.f++;
+      if (b.type === "debris" && b.f > 0) { b.x += b.vx; b.y += b.vy; }
+      if (b.type === "rumble" && b.f === 1) SW.sound.fx.rumble();
+    }
+    booms = booms.filter((b) => !boomDone(b));
+  }
+  function drawBoom(b) {
+    if (b.f < 0 || b.type === "rumble") return;
+    if (b.type === "debris") { drawSprite(b.spr, b.x, b.y); return; }
+    const t = BOOM[b.type];
+    drawSprite(t.frames[Math.floor(b.f / t.delay)], b.x, b.y);
+  }
+
   let god = false;   // ?god=1 (testing): players can't be hit
   function killPlayer(p) {
     if (god || p.dead || p.inv > 0 || p.shield > 0) return;
-    booms.push({ x: p.x, y: p.y, f: 0 });
+    cluster(p.x, p.y, 0);
     SW.sound.fx.playerDeath();
     p.dead = 1; p.lives--;
     p.power = 0; p.speed = 0; p.rate = 10; p.shield = 0;     // upgrades are lost with the life
@@ -233,9 +297,8 @@ SW.game = (function () {
       shooter.score += e.score * 100;
       if (e.kind !== "boss" && e.kind !== "carrier" && e.kind !== "powerup") countKill(e);
     }
-    booms.push({ x: e.x, y: e.y, f: 0 });
+    if (e.kind !== "boss") boom(e.x, e.y);                  // bosses: bigBlast / finalBlast
     if (e.kind !== "powerup") SW.sound.fx.explode(e.pitch);   // sub_6F9E4
-    if (e.kind === "boss") for (let k = 0; k < 6; k++) booms.push({ x: e.x + rand(40) - 20, y: e.y + rand(30) - 15, f: -k * 5 });
     if (e.onDeath) e.onDeath(e);
     if (e.wreck != null) {
       // $6FA58: becomes a wreck that keeps moving with the ground
@@ -384,7 +447,7 @@ SW.game = (function () {
     }
 
     for (let i = enemies.length - 1; i >= 0; i--) if (!enemies[i].alive) enemies.splice(i, 1);
-    booms = booms.filter((b) => ++b.f < 40);
+    stepBooms();
     if (world.flash > 0) world.flash--;
 
     if (banner > 0) banner--;
@@ -478,7 +541,7 @@ SW.game = (function () {
     for (const e of enemies) if (!e.background && (!e.ground || e.kind === "missile")) drawEnemy(e);
 
     for (const s of shots) drawHw(s.spr, s.x, s.y);
-    for (const bm of booms) if (bm.f >= 0) drawSprite(E.EXPLOSION[Math.min(4, bm.f >> 3)], bm.x, bm.y);
+    for (const bm of booms) drawBoom(bm);
     if (world.flash > 0) { ctx.fillStyle = `rgba(255,255,220,${world.flash / 40})`; ctx.fillRect(0, 0, W, 168); }
 
     // HUD

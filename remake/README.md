@@ -46,7 +46,8 @@ server, `?level=N` starts at level N, `?t=N` starts N pixels into the level
 
 Pads: d-pad or left stick moves, Cross/Square/R1/R2 fire, Circle/Triangle jump,
 Options pauses. Press fire on a vehicle's controller to join, also mid-game.
-P or Esc pauses; N turns sound on/off; double-click goes fullscreen.
+P or Esc pauses; N turns sound on/off; C turns the scanline (CRT) look on/off;
+double-click goes fullscreen.
 
 ## What's faithful and what isn't (yet)
 

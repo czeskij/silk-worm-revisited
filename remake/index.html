@@ -10,6 +10,12 @@
                font: 15px/1.5 system-ui, sans-serif; }
   #wrap { position: fixed; inset: 0; display: grid; place-items: center; }
   canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: none; }
+  #box { position: relative; line-height: 0; }
+  /* optional CRT look (C): a dark line under every Amiga row, like a PAL
+     monitor or an emulator's scanline filter; the original itself has none */
+  #crt { position: absolute; inset: 0; pointer-events: none; display: none;
+         background: repeating-linear-gradient(to bottom, transparent 0 50%, rgba(0,0,0,.4) 50% 100%); }
+  #crt.on { display: block; }
   #picker { max-width: 34em; padding: 0 16px; text-align: center; }
   #picker h1 { color: var(--accent); font-size: 1.6em; margin-bottom: .2em; }
   #picker label { display: inline-block; margin-top: 1em; padding: .6em 1.2em; border-radius: 6px;
@@ -31,17 +37,17 @@
     <small>Supported: the Defjam/CCS release (the one this project was analysed from).
            Nothing is uploaded; the file stays in your browser.</small>
   </div>
-  <canvas id="screen" width="320" height="200"></canvas>
+  <div id="box"><canvas id="screen" width="320" height="200"></canvas><div id="crt"></div></div>
 </div>
-<script src="js/gamedata.js?v=20"></script>   <!-- made by build.js; absent in the repo -->
-<script src="js/hints.js?v=20"></script>
-<script src="js/adf.js?v=20"></script>
-<script src="js/gfx.js?v=20"></script>
-<script src="js/input.js?v=20"></script>
-<script src="js/sound.js?v=20"></script>
-<script src="js/music.js?v=20"></script>
-<script src="js/enemies.js?v=20"></script>
-<script src="js/game.js?v=20"></script>
+<script src="js/gamedata.js?v=22"></script>   <!-- made by build.js; absent in the repo -->
+<script src="js/hints.js?v=22"></script>
+<script src="js/adf.js?v=22"></script>
+<script src="js/gfx.js?v=22"></script>
+<script src="js/input.js?v=22"></script>
+<script src="js/sound.js?v=22"></script>
+<script src="js/music.js?v=22"></script>
+<script src="js/enemies.js?v=22"></script>
+<script src="js/game.js?v=22"></script>
 <script>
 "use strict";
 (function () {
@@ -53,7 +59,15 @@
     const s = Math.max(1, Math.floor(Math.min(innerWidth / 320, innerHeight / 200)));
     canvas.style.width = 320 * s + "px";
     canvas.style.height = 200 * s + "px";
+    crt.style.backgroundSize = "100% " + s + "px";   // one line pair per Amiga row
   }
+  const crt = document.getElementById("crt");
+  try { if (localStorage.getItem("crt") === "1") crt.classList.add("on"); } catch (e) { /* no storage */ }
+  addEventListener("keydown", (e) => {
+    if (e.code !== "KeyC" || e.repeat) return;
+    const on = crt.classList.toggle("on");
+    try { localStorage.setItem("crt", on ? "1" : "0"); } catch (err) { /* no storage */ }
+  });
   addEventListener("resize", fit);
   canvas.addEventListener("dblclick", () => document.documentElement.requestFullscreen && document.documentElement.requestFullscreen());
 

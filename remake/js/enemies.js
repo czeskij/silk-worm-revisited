@@ -10,7 +10,6 @@
 
 SW.enemies = (function () {
   let W;   // world interface, set by attach()
-  const EXPLOSION = [320, 321, 322, 323, 324];
   let heliGroupCounter = 0;   // -$7FE6: every 4th helicopter group scatters
 
   function attach(world) { W = world; heliGroupCounter = 0; }
@@ -128,8 +127,13 @@ SW.enemies = (function () {
     if (o.ax !== undefined) e.ax = o.ax;
     if (o.ay !== undefined) e.ay = o.ay;
     return spawn(e, function* (e) {
+      yield* flight(e);
+      // $7085A: reaching the road (y $9E) it stops and becomes the ground blast
+      if (e.y >= 0x9e) { e.alive = false; W.boom(e.x, 0x96, 0, "ground"); }
+    });
+    function* flight(e) {
       for (let i = 0; i < launch && e.y < 0x9e; i++) { if (offscreen(e)) return; physics(e); yield; }
-      if (o.fixed) return;                      // loc_7078C: keeps its direction
+      if (o.fixed) { while (!offscreen(e) && e.y < 0x9e) { physics(e); yield; } return; }   // loc_7078C: keeps its direction
       const t = target();
       e.ax = e.ay = 0;
       e.angle = angleTo(e.x, e.y, t.x, t.y);
@@ -142,7 +146,7 @@ SW.enemies = (function () {
         velocity(e, e.angle, speed);
       }
       while (!offscreen(e) && e.y < 0x9e) { physics(e); yield; }
-    });
+    }
   }
 
   // ---------------------------------------------------------------- families
@@ -915,7 +919,7 @@ SW.enemies = (function () {
   }
   function bossDies(e) {
     W.stopScroll = 2;
-    for (let k = 0; k < 8; k++) W.boom(e.x + W.rand(48) - 24, e.y + W.rand(32) - 16, -k * 6);
+    if (e.final) W.finalBlast(e.x, e.y); else W.bigBlast(e.x, e.y);
   }
   function aimedAtEach(x, y) {                       // $6FB3A: one aimed shot per live player
     for (const p of W.players) if (p.joined && !p.dead) aimedShot(x, y, p.kind);
@@ -1152,5 +1156,5 @@ SW.enemies = (function () {
     generic(Object.assign({}, h, { frames }));
   }
 
-  return { attach, wave, decoded, setAnim, obj, carrier, EXPLOSION };
+  return { attach, wave, decoded, setAnim, obj, carrier };
 })();

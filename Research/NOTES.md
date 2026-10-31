@@ -433,6 +433,23 @@ the previous one; rate = 3546895 / period). The state per channel is at
 | 5 | boss hit (`$6F8E0`), carrier hit (`$6FF54`), final boss hit (`$6E224`) | `$1E0`/`$1E4`, `$240`/`$244`, `$C0`/`$C4`, ch 2 + 3 |
 | 6 | player shot fired (`loc_6F472`) | `$180`, volume `$20`, ch 0 |
 
+- **Pitch**: `d0` is not a period but an index into the 785-entry pitch table at
+  `$6B306` (`$820` down to `$7B`): the frame routine `sub_6B2C2` writes
+  `table[d0]` to AUDxPER and the volume every frame, starts DMA one frame after
+  the call and then points the channel at a silent 2-word loop (`$6B258`). So
+  `$C0` is period 1040 (3.4 kHz), `$180` period 520, `$2C0` period 164.
+- `sub_703AA` (final boss destroyed): sample 0 at index 0–31 on two channels,
+  alternating 0+1 and 2+3 — a low rumble, repeated at random during the ending.
+
+**Explosions**: `$6F7C4` sprites 333–338 (delay 4) for enemies and wrecks;
+`$6F7EE` 344–349; `$70876` 320–324 (delay 2) where a missile reaches the road
+(y `$9E`); `$6F85E` 16 debris pieces (325–332, 308, 309, 314–319) flung at 16
+angles, 8 px/frame, for 24 frames. Player death `$6F790`: four 333–338 blasts
+around the craft (0, 8, 18, 26 frames). Boss death `$6F764`: 30 scattered
+344–349 blasts 5 frames apart, three debris bursts, then the player-death
+pattern. Final boss `$703DA`: 100 blasts every 2 frames, then explosions all
+over the sky, each debris (1 in 8), 344–349 (2 in 8) or 333–338.
+
 **Music**:
 
 - Player at `$71666`, a cut-down Ultimate SoundTracker replay. Jump table:
