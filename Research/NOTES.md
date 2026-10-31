@@ -180,6 +180,14 @@ Level number lives in `-$7F20(a6)`: **1–11 are the game's levels, 12 is the en
   `-$7FD2` += 1 (so **wave clock = ground pixels**, a level is 4,704 px),
   ground counter += 1, backdrop counter += 1 every other step (half-speed
   parallax), and every 32 steps the scenery stream steps (`sub_69D52`).
+- **Pre-roll**: level start (`sub_69BDE`) runs the scroll step `$340` times and
+  only afterwards clears the level clock (`$68662`), so the backdrop (416 px),
+  ground and scenery (832 px, 26 scenery steps) start well into their streams
+  while the waves start at clock 0 — e.g. level 1 opens on the first green hill.
+- **Sprite clipping**: `sub_712AA` draws at Y − `$F` minus the hotspot and cuts
+  every bob off at buffer line `$90`: nothing blitted reaches the road strip,
+  which starts at display line `$DB` (copper list `$69A2E`: playfield from
+  line `$4B`, road from `$DB`, panel from `$F3`).
 - **Ground layer**: stream `-$7FD6`, one byte per 16 px; column *n* is 192 bytes
   at `$62272 + n×$C0` = 16×24 pixels, 4 bitplanes interleaved per row. The ground
   bank is in the main program and shared by all levels.

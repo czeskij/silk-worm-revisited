@@ -8,6 +8,9 @@ SW.game = (function () {
   const I = SW.input, E = SW.enemies;
   const W = 320, H = 200;
   const LEVEL_LEN = 4704;          // wave clock = ground pixels scrolled
+  // sub_69BDE runs the scroll step $340 times before a level starts and only
+  // then clears the level clock: backdrop, road and scenery begin 832 px in
+  const PREROLL = 0x340;
   const GROUND_Y = 0x98;           // jeep's ground level
   const SHOT_FLOOR = 0x9E;         // shots die here
   const SCRIPTS = 0x6EEA0, ROUTINE_BASE = 0x6D21E;
@@ -45,7 +48,8 @@ SW.game = (function () {
     startLevel(first);
     // ?t= (testing): start partway in; skipped waves don't spawn
     if (startClock > 0) {
-      scroll = clock = Math.min(startClock, LEVEL_LEN);
+      clock = Math.min(startClock, LEVEL_LEN);
+      advanceScroll(PREROLL + clock - scroll);
       while (waveIdx < waves.length && waves[waveIdx].t < clock) waveIdx++;
     }
     state = "title";
@@ -65,6 +69,7 @@ SW.game = (function () {
       p += 4;
     }
     scenery = { ptr: lv.sceneryPtr, delay: 0, objs: [] };
+    advanceScroll(PREROLL);
     shots = []; enemies = []; booms = [];
     Object.assign(world, { enemies, players, sin, rand, animAt, level: n, scrollDelta: 0, flash: 0,
                            stopScroll: 0, gameWon: false, scrollPos: 0, siloBusy: false, bonusActive: false,
@@ -175,6 +180,10 @@ SW.game = (function () {
   }
 
   // ---------------------------------------------------------------- scenery
+
+  function advanceScroll(n) {
+    for (let k = 0; k < n; k++) { scroll++; if (scroll % 32 === 0) stepScenery(); }
+  }
 
   function stepScenery() {
     // from the disassembly (sub_69D52): one slot per 32 px, negative = skip

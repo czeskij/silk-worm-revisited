@@ -16,6 +16,10 @@ Layers, top to bottom:
                     (-w - 1) slots; object at world x = scroll + $150, drawn
                     at y = $90 - $F minus the sprite's hotspot
 Under the map: where each enemy wave enters (wave clock + one screen).
+
+Before a level starts, sub_69BDE runs the scroll step $340 times and only then
+clears the level clock, so backdrop, ground and scenery start 832 px in (the
+backdrop 416, at half speed); the map's x is the level clock.
 """
 import struct
 import sys
@@ -31,6 +35,7 @@ SCREEN_W = 320
 BACK_H, GROUND_H = 144, 24
 SCENERY_Y = 0x90 - 0xF
 BAND_H = 44
+PREROLL = 0x340
 
 
 def ground_stream(mem, level):
@@ -46,7 +51,7 @@ def scenery(mem, level, length):
     """[(world_x, sprite)] following sub_69D52."""
     a = struct.unpack_from(">I", mem, LEVEL_PTRS + level * 12 + 8)[0]
     delay, out = 0, []
-    for pos in range(0, length, 32):
+    for pos in range(32, PREROLL + length + 1, 32):
         delay -= 1
         if delay >= 0:
             continue
@@ -55,7 +60,7 @@ def scenery(mem, level, length):
         if w < 0:
             delay = -w - 1
         elif w:
-            out.append((pos + 0x150, w))
+            out.append((pos + 0x150 - PREROLL, w))
     return out
 
 
@@ -87,7 +92,7 @@ def main():
         block = tracks(adf, track, 4)
         back = stream(mem, level)
         for i in range(width // 16 + 1):
-            col = column_pixels(block, back[i % len(back)], "planar")
+            col = column_pixels(block, back[(i + PREROLL // 32) % len(back)], "planar")
             for y in range(BACK_H):
                 for x in range(16):
                     if i * 16 + x < width:
@@ -96,7 +101,7 @@ def main():
         # ground
         ground = ground_stream(mem, level)
         for i in range(width // 16 + 1):
-            base = GROUND_BANK + ground[i % len(ground)] * 0xC0
+            base = GROUND_BANK + ground[(i + PREROLL // 16) % len(ground)] * 0xC0
             for y in range(GROUND_H):
                 planes = struct.unpack_from(">4H", mem, base + y * 8)
                 for x in range(16):
