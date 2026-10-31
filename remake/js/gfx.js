@@ -2,7 +2,7 @@
 "use strict";
 
 SW.gfx = (function () {
-  const { be16, bes16, be32 } = SW.adf;
+  const { be16, bes16, be32 } = SW.data;
   const SPRITE_PTRS = 0x4A498, SPRITE_REC_BIAS = 0x5F3B8, SPRITE_PIX = 0x4AAD8;
   // Per sprite: x/y offset (signed bytes) and the next piece of a composite
   // object (word, 0 = none). $715C0 folds the offset into the hotspot and the

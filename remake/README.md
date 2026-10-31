@@ -14,24 +14,15 @@ node build.js path/to/Silkworm.adf
 
 This makes **`dist/Silkworm.html`**: the whole game in one file. Copy it
 anywhere (another computer, a USB stick) and double-click it; nothing else is
-needed and nobody has to pick a disk. It also writes `js/gamedata.js`, so
-`index.html` in this folder starts straight away too.
+needed. It also writes `js/gamedata.js`, which `index.html` in this folder
+runs from (handy while working on the code).
 
 Both files contain the game's own graphics, levels and sounds, so they're
 git-ignored: keep them for yourself and don't upload them.
 
-Without unpacking, `index.html` asks for the ADF instead and keeps it in the
-browser (IndexedDB). If the browser refuses that as a local file, serve the
-folder:
-
-```bash
-python3 -m http.server 8000
-```
-
-Then open <http://localhost:8000/remake/>.
-
-URL options (handy for testing): `?adf=path` loads a disk image from the
-server, `?level=N` starts at level N, `?t=N` starts N pixels into the level
+The browser never reads the ADF itself; `build.js` is the only code that
+does. URL options (handy for testing, also on `dist/Silkworm.html`):
+`?level=N` starts at level N, `?t=N` starts N pixels into the level
 (4704 = boss), `?god=1` makes the players invulnerable.
 
 ## Controls

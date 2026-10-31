@@ -16,44 +16,34 @@
   #crt { position: absolute; inset: 0; pointer-events: none; display: none;
          background: repeating-linear-gradient(to bottom, transparent 0 50%, rgba(0,0,0,.4) 50% 100%); }
   #crt.on { display: block; }
-  #picker { max-width: 34em; padding: 0 16px; text-align: center; }
-  #picker h1 { color: var(--accent); font-size: 1.6em; margin-bottom: .2em; }
-  #picker label { display: inline-block; margin-top: 1em; padding: .6em 1.2em; border-radius: 6px;
-                  background: var(--accent); color: #111; font-weight: 600; cursor: pointer; }
-  #picker input { display: none; }
-  #err { color: #ff8080; min-height: 1.5em; }
-  small { color: #999; }
+  #missing { max-width: 34em; padding: 0 16px; text-align: center; display: none; }
+  #missing h1 { color: var(--accent); font-size: 1.6em; margin-bottom: .2em; }
+  code { color: var(--accent); }
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div id="picker">
+  <div id="missing">
     <h1>Silkworm Revisited</h1>
-    <p>A two-player remake that reads everything from your own copy of the
-       Amiga game. Pick your Silkworm <b>.adf</b> disk image to start; the browser
-       remembers it for next time.</p>
-    <label>Choose Silkworm.adf<input id="file" type="file" accept=".adf"></label>
-    <p id="err"></p>
-    <small>Supported: the Defjam/CCS release (the one this project was analysed from).
-           Nothing is uploaded; the file stays in your browser.</small>
+    <p>The game data isn't unpacked yet. Run this once in the <code>remake</code>
+       folder with your own copy of the disk:</p>
+    <p><code>node build.js path/to/Silkworm.adf</code></p>
   </div>
   <div id="box"><canvas id="screen" width="320" height="200"></canvas><div id="crt"></div></div>
 </div>
-<script src="js/gamedata.js?v=23"></script>   <!-- made by build.js; absent in the repo -->
-<script src="js/hints.js?v=23"></script>
-<script src="js/adf.js?v=23"></script>
-<script src="js/gfx.js?v=23"></script>
-<script src="js/input.js?v=23"></script>
-<script src="js/sound.js?v=23"></script>
-<script src="js/music.js?v=23"></script>
-<script src="js/enemies.js?v=23"></script>
-<script src="js/game.js?v=23"></script>
+<script src="js/gamedata.js?v=24"></script>   <!-- made by build.js; absent in the repo -->
+<script src="js/hints.js?v=24"></script>
+<script src="js/data.js?v=24"></script>
+<script src="js/gfx.js?v=24"></script>
+<script src="js/input.js?v=24"></script>
+<script src="js/sound.js?v=24"></script>
+<script src="js/music.js?v=24"></script>
+<script src="js/enemies.js?v=24"></script>
+<script src="js/game.js?v=24"></script>
 <script>
 "use strict";
 (function () {
   const canvas = document.getElementById("screen");
-  const picker = document.getElementById("picker");
-  const err = document.getElementById("err");
 
   function fit() {
     const s = Math.max(1, Math.floor(Math.min(innerWidth / 320, innerHeight / 200)));
@@ -71,14 +61,6 @@
   addEventListener("resize", fit);
   canvas.addEventListener("dblclick", () => document.documentElement.requestFullscreen && document.documentElement.requestFullscreen());
 
-  function fromAdf(bytes) {
-    const adf = new Uint8Array(bytes);
-    const mem = SW.adf.buildMemory(adf);
-    const problem = SW.adf.validate(adf, mem);
-    if (problem) { err.textContent = problem; return false; }
-    return run(mem, SW.adf.blockReader(adf));
-  }
-
   function run(mem, blocks) {
     SW.gfx.init(blocks, mem);
     SW.sound.init(mem);
@@ -87,7 +69,6 @@
     addEventListener("pointerdown", () => SW.sound.unlock());
     const q = new URLSearchParams(location.search);
     SW.game.init(canvas, Number(q.get("level")) || 1, Number(q.get("t")) || 0, q.get("god") === "1");
-    picker.style.display = "none";
     canvas.style.display = "block";
     fit();
     let last = performance.now(), acc = 0;
@@ -98,21 +79,10 @@
       SW.game.draw();
       requestAnimationFrame(loop);
     })(last);
-    return true;
   }
 
-  document.getElementById("file").addEventListener("change", async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const bytes = await f.arrayBuffer();
-    if (fromAdf(bytes)) SW.store.put("adf", bytes);
-  });
-
-  // ?adf=path loads the disk from a local web server (handy for development)
-  const url = new URLSearchParams(location.search).get("adf");
-  if (url) fetch(url).then((r) => r.arrayBuffer()).then(fromAdf).catch((e) => { err.textContent = String(e); });
-  else if (SW.gamedata) { const d = SW.adf.loadBundle(SW.gamedata); run(d.mem, d.blocks); }   // unpacked build
-  else SW.store.get("adf").then((bytes) => { if (bytes) fromAdf(bytes); });
+  if (SW.gamedata) { const d = SW.data.load(SW.gamedata); run(d.mem, d.blocks); }
+  else document.getElementById("missing").style.display = "block";
 })();
 </script>
 </body>

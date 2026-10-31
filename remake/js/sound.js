@@ -13,7 +13,7 @@ SW.sound = (function () {
   function init(memory) {
     mem = memory;
     pitch = [];
-    for (let i = 0; i < PITCHES; i++) pitch.push(SW.adf.be16(mem, PITCH + i * 2));
+    for (let i = 0; i < PITCHES; i++) pitch.push(SW.data.be16(mem, PITCH + i * 2));
   }
 
   // Browsers only allow audio after a user gesture: called on key/pad input.
@@ -26,7 +26,7 @@ SW.sound = (function () {
     master.gain.value = 0.5;
     master.connect(ctx.destination);
     for (let i = 0; i < COUNT; i++) {
-      const a = SW.adf.be32(mem, TABLE + i * 8), len = SW.adf.be16(mem, TABLE + i * 8 + 4);
+      const a = SW.data.be32(mem, TABLE + i * 8), len = SW.data.be16(mem, TABLE + i * 8 + 4);
       // stored at 8000 Hz nominal; the real rate is set per play from the period
       const buf = ctx.createBuffer(1, len, 8000), data = buf.getChannelData(0);
       for (let j = 0; j < len; j++) data[j] = ((mem[a + j] << 24) >> 24) / 128;   // signed 8-bit

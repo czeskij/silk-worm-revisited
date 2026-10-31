@@ -4,7 +4,7 @@
 "use strict";
 
 SW.game = (function () {
-  const { be16, bes16, be32 } = SW.adf;
+  const { be16, bes16, be32 } = SW.data;
   const I = SW.input, E = SW.enemies;
   const W = 320, H = 200;
   const LEVEL_LEN = 4704;          // wave clock = ground pixels scrolled
