@@ -398,7 +398,11 @@ SW.game = (function () {
     const s = SW.gfx.sprite(i);
     if (!s) return;
     if (s.next && (depth || 0) < 8) drawSprite(s.next, x, y, (depth || 0) + 1);
-    ctx.drawImage(s.cv, Math.round(x - s.hx), Math.round(y - 15 - s.hy));
+    // the blitter draws into the 144-line backdrop buffer only: rows from
+    // line $90 down (the road) are cut off ($71344)
+    const left = Math.round(x - s.hx), top = Math.round(y - 15 - s.hy);
+    const w = s.cv.width, rows = Math.min(s.cv.height, 0x90 - top);
+    if (rows > 0) ctx.drawImage(s.cv, 0, 0, w, rows, left, top, w, rows);
   }
 
   function text(str, x, y, colour, align) {
@@ -523,5 +527,5 @@ SW.game = (function () {
              boss: b && { x: Math.round(b.x), y: Math.round(b.y), hp: b.hp, spr: b.spr, shootable: b.shootable } };
   }
 
-  return { init, step, draw, stats, W, H };
+  return { init, step, draw, stats, W, H, get world() { return world; } };   // world: for debugging
 })();
