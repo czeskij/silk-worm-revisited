@@ -1,0 +1,19 @@
+// Cloudflare Worker for the remake. Deployed by .github/workflows/deploy.yml
+// on every push to main; first-time setup: `node setup.js` (see README.md).
+{
+  "name": "silkworm",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "account_id": "23144c9591362ca84e7b580c4679bdf3",
+  "workers_dev": true,
+  "assets": {
+    "directory": "../remake",      // the game's code; remake/.assetsignore keeps the data out
+    "binding": "ASSETS",
+    "run_worker_first": true        // the password check covers every file
+  },
+  "kv_namespaces": [
+    // filled in by setup.js
+    { "binding": "GAMEDATA", "id": "SET_BY_SETUP" }
+  ],
+  "vars": { "AUTH_USER": "silkworm" }
+}

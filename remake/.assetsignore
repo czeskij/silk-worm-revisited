@@ -1,0 +1,7 @@
+# Not uploaded by the Worker deploy (deploy/wrangler.jsonc): the game data is
+# served from private KV, the rest isn't part of the site
+js/gamedata.js
+dist
+build.js
+README.md
+.assetsignore

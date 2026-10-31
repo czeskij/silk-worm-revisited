@@ -26,3 +26,8 @@ __pycache__/
 # The unpacked game made by remake/build.js (game data: keep it local)
 remake/js/gamedata.js
 remake/dist/
+
+# Cloudflare Worker: local installs, dev state and dev secrets
+deploy/node_modules/
+deploy/.wrangler/
+deploy/.dev.vars

@@ -1,0 +1,12 @@
+{
+  "name": "silkworm-deploy",
+  "private": true,
+  "description": "Cloudflare Worker that serves the remake behind a password",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.151.0"
+  }
+}
