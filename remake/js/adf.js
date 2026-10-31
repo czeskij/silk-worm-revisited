@@ -47,7 +47,35 @@ SW.adf = (function () {
     return null;
   }
 
-  return { TRACK, trackOrder, tracks, buildMemory, validate, be16, bes16, be32 };
+  // Everything the remake needs from the disk: the loaded game ($3FFE0 up) and
+  // the backdrop tracks of each level (table $6B924). build.js stores this in
+  // js/gamedata.js so the game starts without the ADF.
+  const LOAD = 0x3FFE0, LEVEL_TRACKS = 0x6B924;
+  function unpack(adf, mem) {
+    const blocks = {};
+    for (let n = 0; n < 16; n++) {
+      const t = be16(mem, LEVEL_TRACKS + n * 2);
+      if (t < 156 && !(t in blocks)) blocks[t] = tracks(adf, t, 4);
+    }
+    return { game: mem.subarray(LOAD), blocks };
+  }
+  function blockReader(adf) { return (t) => tracks(adf, t, 4); }
+
+  // ...and back: SW.gamedata holds base64 strings
+  function fromBase64(b64) {
+    const bin = atob(b64), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function loadBundle(data) {
+    const mem = new Uint8Array(0x80000);
+    mem.set(fromBase64(data.game), LOAD);
+    const blocks = {};
+    for (const t in data.blocks) blocks[t] = fromBase64(data.blocks[t]);
+    return { mem, blocks: (t) => blocks[t] };
+  }
+
+  return { TRACK, trackOrder, tracks, buildMemory, validate, unpack, blockReader, loadBundle, be16, bes16, be32 };
 })();
 
 // Keep the ADF in IndexedDB so it only has to be picked once per browser.

@@ -2,7 +2,7 @@
 "use strict";
 
 SW.gfx = (function () {
-  const { be16, bes16, be32, tracks } = SW.adf;
+  const { be16, bes16, be32 } = SW.adf;
   const SPRITE_PTRS = 0x4A498, SPRITE_REC_BIAS = 0x5F3B8, SPRITE_PIX = 0x4AAD8;
   // Per sprite: x/y offset (signed bytes) and the next piece of a composite
   // object (word, 0 = none). $715C0 folds the offset into the hotspot and the
@@ -12,11 +12,12 @@ SW.gfx = (function () {
   const GROUND_BANK = 0x62272;
 
   const HW_BANK = 0x61132, HW_COUNT = 69;   // hardware sprites $200-$244 (loc_714AA)
-  let mem, adf, level, palette, spriteCache, backCols, groundCache, hwPalette, hwCache;
+  let mem, blockOf, level, palette, spriteCache, backCols, groundCache, hwPalette, hwCache;
   const spriteData = [];   // decoded colour indices, palette-independent
 
-  function init(adfBytes, memory) {
-    adf = adfBytes; mem = memory;
+  // blocks(track) returns the 4 tracks a level's backdrop is loaded from
+  function init(blocks, memory) {
+    blockOf = blocks; mem = memory;
     for (let i = 0; i < 400; i++) spriteData[i] = decodeSprite(i);
   }
 
@@ -79,7 +80,7 @@ SW.gfx = (function () {
     hwCache = new Map();
 
     // backdrop: 20 columns of 9 cells (16x16, 4 bitplanes interleaved per row)
-    const block = tracks(adf, be16(mem, LEVEL_TRACKS + n * 2), 4);
+    const block = blockOf(be16(mem, LEVEL_TRACKS + n * 2));
     backCols = [];
     for (let col = 0; col < 20; col++) {
       const idx = new Uint8Array(16 * 144);

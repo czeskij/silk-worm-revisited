@@ -22,3 +22,7 @@ Research/levels/*.bin
 .DS_Store
 __pycache__/
 *.wav
+
+# The unpacked game made by remake/build.js (game data: keep it local)
+remake/js/gamedata.js
+remake/dist/

@@ -33,14 +33,15 @@
   </div>
   <canvas id="screen" width="320" height="200"></canvas>
 </div>
-<script src="js/hints.js?v=16"></script>
-<script src="js/adf.js?v=16"></script>
-<script src="js/gfx.js?v=16"></script>
-<script src="js/input.js?v=16"></script>
-<script src="js/sound.js?v=16"></script>
-<script src="js/music.js?v=16"></script>
-<script src="js/enemies.js?v=16"></script>
-<script src="js/game.js?v=16"></script>
+<script src="js/gamedata.js?v=17"></script>   <!-- made by build.js; absent in the repo -->
+<script src="js/hints.js?v=17"></script>
+<script src="js/adf.js?v=17"></script>
+<script src="js/gfx.js?v=17"></script>
+<script src="js/input.js?v=17"></script>
+<script src="js/sound.js?v=17"></script>
+<script src="js/music.js?v=17"></script>
+<script src="js/enemies.js?v=17"></script>
+<script src="js/game.js?v=17"></script>
 <script>
 "use strict";
 (function () {
@@ -56,12 +57,16 @@
   addEventListener("resize", fit);
   canvas.addEventListener("dblclick", () => document.documentElement.requestFullscreen && document.documentElement.requestFullscreen());
 
-  function start(bytes) {
+  function fromAdf(bytes) {
     const adf = new Uint8Array(bytes);
     const mem = SW.adf.buildMemory(adf);
     const problem = SW.adf.validate(adf, mem);
     if (problem) { err.textContent = problem; return false; }
-    SW.gfx.init(adf, mem);
+    return run(mem, SW.adf.blockReader(adf));
+  }
+
+  function run(mem, blocks) {
+    SW.gfx.init(blocks, mem);
     SW.sound.init(mem);
     SW.music.init(mem);
     addEventListener("keydown", () => SW.sound.unlock());
@@ -86,13 +91,14 @@
     const f = e.target.files[0];
     if (!f) return;
     const bytes = await f.arrayBuffer();
-    if (start(bytes)) SW.store.put("adf", bytes);
+    if (fromAdf(bytes)) SW.store.put("adf", bytes);
   });
 
   // ?adf=path loads the disk from a local web server (handy for development)
   const url = new URLSearchParams(location.search).get("adf");
-  if (url) fetch(url).then((r) => r.arrayBuffer()).then(start).catch((e) => { err.textContent = String(e); });
-  else SW.store.get("adf").then((bytes) => { if (bytes) start(bytes); });
+  if (url) fetch(url).then((r) => r.arrayBuffer()).then(fromAdf).catch((e) => { err.textContent = String(e); });
+  else if (SW.gamedata) { const d = SW.adf.loadBundle(SW.gamedata); run(d.mem, d.blocks); }   // unpacked build
+  else SW.store.get("adf").then((bytes) => { if (bytes) fromAdf(bytes); });
 })();
 </script>
 </body>

@@ -26,8 +26,9 @@ the game puts one of them on the keyboard).
 ## Remake
 
 [remake/](remake/) is a browser remake (two players, keyboard or gamepads) that
-reads its graphics, levels and wave scripts from your ADF. Open
-`remake/index.html` and pick the disk. Details and what's still approximated
+takes its graphics, levels and wave scripts from your ADF. Run
+`node remake/build.js path/to/Silkworm.adf` once to get `remake/dist/Silkworm.html`,
+a standalone one-file game you can double-click anywhere. Details and what's still approximated
 are in [remake/README.md](remake/README.md).
 
 ## Reverse engineering

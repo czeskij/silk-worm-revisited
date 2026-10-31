@@ -1,16 +1,28 @@
 # Silkworm Revisited: the remake
 
-A browser remake for two players that loads all graphics, levels and wave
+A browser remake for two players that takes all graphics, levels and wave
 scripts from **your own Silkworm ADF**. The code in this folder holds no game
 data; `js/hints.js` only lists sprite numbers and group sizes per enemy routine.
 
 ## Run
 
-Open `index.html` in Chrome, Edge or Firefox and pick your `Silkworm.adf`.
-The browser keeps it (IndexedDB), so next time it starts straight away.
+Unpack your disk once (needs [Node.js](https://nodejs.org)):
 
-If the browser refuses to keep the file or doesn't see your pads when opened
-as a local file, serve the folder instead:
+```bash
+node build.js path/to/Silkworm.adf
+```
+
+This makes **`dist/Silkworm.html`**: the whole game in one file. Copy it
+anywhere (another computer, a USB stick) and double-click it; nothing else is
+needed and nobody has to pick a disk. It also writes `js/gamedata.js`, so
+`index.html` in this folder starts straight away too.
+
+Both files contain the game's own graphics, levels and sounds, so they're
+git-ignored: keep them for yourself and don't upload them.
+
+Without unpacking, `index.html` asks for the ADF instead and keeps it in the
+browser (IndexedDB). If the browser refuses that as a local file, serve the
+folder:
 
 ```bash
 python3 -m http.server 8000
