@@ -180,6 +180,11 @@ Level number lives in `-$7F20(a6)`: **1–11 are the game's levels, 12 is the en
   `-$7FD2` += 1 (so **wave clock = ground pixels**, a level is 4,704 px),
   ground counter += 1, backdrop counter += 1 every other step (half-speed
   parallax), and every 32 steps the scenery stream steps (`sub_69D52`).
+- **Wave scheduler** (`$6EF08`): reads (time, routine) pairs and spawns a wave
+  when the level clock *equals* its time; if the clock is already past it, the
+  entry is skipped. The lists aren't fully sorted, so 7 waves never appear: the
+  tank at 2032 in level 2 (after a wave at 2036) and six AA guns (1744–2064) in
+  level 9.
 - **Pre-roll**: level start (`sub_69BDE`) runs the scroll step `$340` times and
   only afterwards clears the level clock (`$68662`), so the backdrop (416 px),
   ground and scenery (832 px, 26 scenery steps) start well into their streams

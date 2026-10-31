@@ -360,7 +360,12 @@ SW.game = (function () {
       if (scroll % 32 === 0) stepScenery();
     }
     world.scrollPos = scroll;
-    while (waveIdx < waves.length && waves[waveIdx].t <= clock) E.wave(waves[waveIdx++].addr);
+    // $6EF1C: a wave starts when the clock equals its time; an entry whose time
+    // has already passed (the list isn't always sorted) is skipped, never spawned
+    while (waveIdx < waves.length && waves[waveIdx].t <= clock) {
+      const w = waves[waveIdx++];
+      if (w.t === clock) E.wave(w.addr);
+    }
 
     players.forEach((p, i) => {
       if (!p.joined) return;
