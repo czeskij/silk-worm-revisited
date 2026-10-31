@@ -427,12 +427,35 @@ the previous one; rate = 3546895 / period). The state per channel is at
 
 **Music**:
 
-- Music/SFX player at `$71666`: jump table `init / play / ? / stop`.
-  The start-up code points it at the sound bank **`$71D74`** (custom format: offset
-  table to songs and instrument tables; song number in `d0`).
-- A separate 15-instrument SoundTracker header `silkwormtitle` sits at `$7AAAC`
-  (6 instruments, 10 patterns) — its samples are not stored after it, so it may be
-  a leftover or uses the bank's samples.
+- Player at `$71666`, a cut-down Ultimate SoundTracker replay. Jump table:
+  `$71678` init / music on-off, `$71686` start song `d0` (`d1` = loop), `$71758`
+  play (called every frame), `$71734` stop.
+- Bank **`$71D74`**: long +0 → table of song header offsets, long +4 → table of
+  sample lists (offsets from the bank, list ends with `$FFFFFFFF`). Only song 0
+  exists: the 15-instrument header `silkwormtitle` at `$7AAAC`, whose samples sit
+  *before* it (the list gives their addresses).
+
+  | Inst | Name | Bytes | Vol | Sample |
+  |---|---|---|---|---|
+  | 1 | popsnare2 | 4000 | 64 | `$74F40` |
+  | 2 | thickbk | 2104 | 64 | `$7A274` |
+  | 3 | hbass3 | 7502 | 30 | `$71DA0` |
+  | 4 | hammerbass | 7400 | 50 | `$7858C` |
+  | 5 | monkey | 5200 | 64 | `$73AF0` |
+  | 6 | panflute | 9900 | 64 | `$75EE0` |
+
+  16 positions (`2 0 1 3 4 5 7 6 6 8 6 0 4 5 7 9`), 10 patterns from `+$258`;
+  the restart byte is ignored, the song loops from position 0. Speed 7 (set by
+  `F07` on the first row), so a loop takes about 2 min 23 s.
+- Replay rules: speed defaults to 6; a period restarts the sample, an instrument
+  sets sample/length/volume (with a repeat start, only the loop plays). Row
+  commands: `C` volume, `F` speed (low nibble), `E` starts a volume slide that
+  runs every frame until a row with a zero parameter. Frame commands: `1`/`6`–`8`
+  pitch up (to period `$71`), `2`/`9`–`B` down (to `$358`), `D` volume slide,
+  `0`/`3`–`5` arpeggio on frames 1–5 through the period table at `$71D12`.
+- Music is heard only on the title, credits, high-score, control-select and
+  ending screens (started at `$696A6`, stopped at game start `$696C4`); the game
+  loop runs either the music or the sound effects, never both.
 
 ### Text
 
@@ -447,6 +470,6 @@ MacDonald, the ST programmer John Croudy.
 2. ~~Level backdrops~~, ~~enemy waves~~ and ~~full level maps~~ — done.
    Open: enemy flight paths (so the band could show where enemies actually fly),
    and the HUD/status panel layout.
-3. Reverse the sound bank format and player → export tunes/SFX as .mod/.wav.
+3. ~~Reverse the sound bank format and player~~ — done (see Sound).
 4. Name variables in the `$0080–$8080` block (scores, lives, positions) — useful
    for trainers, a patched default “2 joysticks” control setup, or a reimplementation.

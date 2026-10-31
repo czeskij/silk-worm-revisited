@@ -21,3 +21,4 @@ Research/levels/*.bin
 
 .DS_Store
 __pycache__/
+*.wav

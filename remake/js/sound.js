@@ -59,5 +59,5 @@ SW.sound = (function () {
     launch: () => play(3, 0x200, 0x40, 3),                        // loc_707C0: missile/shell launched
   };
 
-  return { init, unlock, play, fx, toggle() { enabled = !enabled; return enabled; }, get enabled() { return enabled; } };
+  return { init, unlock, play, fx, toggle() { enabled = !enabled; return enabled; }, get enabled() { return enabled; }, get context() { return ctx; } };
 })();

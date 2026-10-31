@@ -257,6 +257,10 @@ SW.game = (function () {
     lastInputs = inputs;
     if (state !== lastState) { lastState = state; stateTimer = 0; }
     stateTimer++;
+    // the title song plays on the menu screens only ($696A6), and stops when a
+    // game starts ($696C4): in play the channels belong to the sound effects
+    if (state !== "play" && SW.sound.enabled) SW.music.play(SW.sound.context);
+    else SW.music.stop();
     if (state === "title" || state === "over" || state === "end") {
       // after the end/game over, wait a second and want a new press of fire
       if (state !== "title" && stateTimer < 50) return;

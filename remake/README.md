@@ -55,7 +55,9 @@ From the disassembly (see `../Research/NOTES.md`):
 - shots and missiles with their real hardware-sprite graphics, pointing the
   way they fly
 - the original sound effects (samples from your ADF, played at the game's
-  periods and channels)
+  periods and channels) and the title music, rendered from the song and samples
+  on your ADF by a port of the game's replay routine; like the original it plays
+  on the title and end screens and stops when a game starts
 - enemy hit points as in the original (tanks take 6 hits, blimps 8, ...)
 - the shield item (300 frames, rams enemies it touches; a second pickup while
   shielded, or 18 shots at it, sets off a smart bomb) and the bonus carrier: a
@@ -72,4 +74,4 @@ Approximated for now:
   vehicle's later movement, the emplacement's projectile, the swirling planes'
   loop speed
 - losing upgrades on death is assumed
-- no music yet, simple HUD
+- simple HUD
